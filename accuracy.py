@@ -47,6 +47,7 @@ from printing import printDict, printList
 from pathlib import Path
 
 import numpy as np
+from tabulate import tabulate
 
 
 
@@ -56,17 +57,22 @@ def parsujArgumenty():
     '''
     '''
     
-    dataTemplate = pd.DataFrame([['owies',1,2],['trawa',5,3]], columns=['nazwa','predict','referencja'])
-    
     parser = argparse.ArgumentParser(formatter_class = argparse.RawTextHelpFormatter,description=opis)
     
     
     parser.add_argument('input',  type=str,   help=textwrap.fill(f'''Adres pliku 'csv' z danymi. Dane to:
                                                                 1. Surowe dane - przynajmniej trzy kolumny:
-                                                                    {dataTemplate}
-                                                                - 'nazwa' np. owies,
+                                                                ----------------------------    
+                                                                | short | true | predicted |
+                                                                | ----- | ---- | --------- |
+                                                                | owies |   1  |     2     |
+                                                                | trawa |   5  |     3     |
+                                                                ----------------------------
+                                                                :
+                                                                    gdzie:
+                                                                - 'short' - skrócone nazwy roślin np. owies,
                                                                 - 'predict' np. 5 - wynik klasyfikacji
-                                                                - 'referencja' np. 7 - prawdziwa etykieta klasy.
+                                                                - 'true' np. 7 - prawdziwa etykieta klasy.
                                                                 
                                                                 2. Cross matrix - gotowa tabela z opisami i sumami. Wymaga podania argumentu opcjonalnego '-c'.''',width = 70))
     
@@ -83,9 +89,14 @@ def parsujArgumenty():
     parser.add_argument('-rap','--raport',   help=textwrap.fill('''Generuje raport w html, czyli wszytskie tabele
                                                             w jednym pliku html - raport.html''', width = 100), action = 'store_true')
     
+    parser.add_argument('-rf','--ref',   help=textwrap.fill('''Adres pliku 'csv' z danymi referencyjnymi - 3 kolumny:
+                                                            'true;short;long'. Domyślnie adres pliku 'input' z dodatkowym członem 'true' np.:
+                                                            - input: 'ndviKlasyfik.csv'
+                                                            - ref:  'ndviKlasyfik_true.csv'.''', width = 100), default = 'default')
+    
     parser.add_argument('-v','--verbose',   help=textwrap.fill(u"Wyświetla bardziej szczegółowe informacje.", width = 100), action = 'store_true')
     
-    args = vars(parser.parse_args()) # zamienia wynik na zwykły słownik
+    args = parser.parse_args() 
     return args
 
 
@@ -96,65 +107,164 @@ def przygotujDaneInput(args):
     
     # ustal katalog z którego uruchamiany jest skrypt
     
-    args['runDir'] = Path(__file__).resolve().parent
+    args.runDir = Path(__file__).resolve().parent.as_posix()
     
-    if args['input']:
-        args['input'] = Path(args['input']).resolve()
-        args['out'] = args['input'].with_name('cross.csv').resolve()
-        args['workDir'] = args['input'].parent
-
-    if args['save']:
+    if args.input:
+        args.input = Path(args.input).resolve()
+        args.out = args.input.with_name('cross.csv').resolve().as_posix()
+        args.workDir = args.input.parent.as_posix()
+        args.input = args.input.as_posix()
+    
+    # tworzy adresy do zapisu wyników
+    if args.save:
         save = ['cros', 'trueFalse', 'classicAcc', 'modern1','modern2']
         sl ={}
+        tmpName = Path(args.input).name.split('.')[0]
         for i,s in enumerate(save,1):
-            name = f'r0{i}_{s}.csv'
-            sl[s] = args['input'].with_name(name).resolve()
-        args['save'] = sl
+            name = f'r0{tmpName}_{i}_{s}.csv'
+            sl[s] = Path(args.input).with_name(name).resolve().as_posix()
+        args.save = sl
    
-    if args['raport']:
-        args['raport'] = args['input'].with_name('raport.html').resolve()
-        
+    if args.raport:
+        args.raport = Path(args.input).with_name('raport.html').resolve().as_posix()
+     
+    if args.ref == 'default':
+        name = Path(args.input).name.split('.')[0]
+        name = f'{name}_true.csv'
+        args.ref = Path(args.input).with_name(name).as_posix()
+    else:
+        args.ref = Path(args.ref).resolve().as_posix()
+    
     return args
+
 
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-def crossT(data):
+def crossT(data,ref):
     ''' Funkcja tworzy confiusion matrix wykorzystująć 'pd.crosstab()'.
         Args:
-            - data:    pd.DataFRame, obowiązkowe 3 kolumny: nazwa, predict, referencja
+            - data:    pd.DataFRame, obowiązkowe 3 kolumny: short, true, predicted
 '
         Out:
             - wynik:  pd.DataFrame
     '''
     df = data.copy()
+    ref = ref[ref.loc[:,'short'] != 'noData']
+    ref = ref.sort_values('true')
+    
+    idx = ref.loc[:,'short'] == 'fillVal'
+    #fillVal = int(ref.loc[idx,'true'])
     
     # cross matrix
-    cros = pd.crosstab(df.referencja,df.predict,rownames=['referencje'],colnames=['predicted'])  
+    cros = pd.crosstab(df.true,df.predicted,rownames=['true'],colnames=['predicted'])
 
-    # na podstawie kolumn 'nazwa' i 'referencja' tworzy słownik: {nazwa:referencja}
-    nazwy = pd.unique(df.nazwa)
+    # Waliduj - uzupełnij kolumny / wiersze do cross matrix
+    cros = walidujCros(cros,ref)
+    
+    # mapuj nazwy kolumn i wierszy
+    cros.columns = ref.loc[:,'short']
+    cros.index = ref.loc[:,'short']
+    cros.axes[1].name='predicted'
+    cros.axes[0].name='true'
+    
+    # dodaje sumy wierszy i kolumn
+    sum1 = cros.sum(axis=0)
+    cros.loc['sumKol',:] = sum1
+    
+    sum2 = cros.sum(axis=1)
+    cros.loc[:,'sumRow'] = sum2
+    
+    return cros.astype('int')
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+
+def walidujCros(cros,ref):
+    ''' Jeśli wyniki klasyfikacji nie zawierają wszystkich prawdziwych klas (jakiejś klasy nie wykryto),
+        to cross matrix ma mniej kolumn(klasyfikacja) niż wierszy prawdy. Trzeba dodać kolumny z brakującymi
+        klasami z zerowymi wystąpieniami. Podobnie jest z wierszami.
+    '''
+    cros,ref = cros.copy(),ref.copy()
+    
+    s1 = set(ref.true.values) # wartości prawdziwe z pliku referencjego
+    s2 = set(cros.columns.values) # kolumny cross
+    s3 = set(cros.index.values) # wiersze cross
+    #print(f'\ncros: {list(s1)} / {s2}\nref: {list(s2)}\n')
+    
+    # uzupełnia kolumny
+    if len(s1.difference(s2)) > 0:
+        dif = s1.difference(s2)
+        for n in dif:
+            cros.loc[:,n] = [0 for i in range(cros.shape[0])]
+            
+        kols = list(cros.columns.values)
+        kols.sort()
+        cros = cros.loc[:,kols]
+    
+        print(f'\n\ntuuu:\n{cros}\n\n')
+     
+     # uzupełnia wiersze
+    if len(s1.difference(s3)) > 0:
+        dif = s1.difference(s3)
+        for n in dif:
+            cros.loc[n,:] = [0 for i in range(cros.shape[1])]
+            
+        rows = list(cros.index.values)
+        rows.sort()
+        cros = cros.loc[rows,:]
+    
+        #print(f'\n\ntuuu:\n{cros}\n\n')
+    return cros
+
+
+
+
+
+
+
+
+def crossTOld(data,ref):
+    ''' Funkcja tworzy confiusion matrix wykorzystująć 'pd.crosstab()'.
+        Args:
+            - data:    pd.DataFRame, obowiązkowe 3 kolumny: short, true, predicted
+'
+        Out:
+            - wynik:  pd.DataFrame
+    '''
+    df = data.copy()
+    ref = ref[ref.loc[:,'short'] != 'noData']
+    print(df)
+    
+    # cross matrix
+    cros = pd.crosstab(df.true,df.predicted,rownames=['true'],colnames=['predicted'])
+    print(cros)
+
+    # na podstawie kolumn 'short' i 'true' tworzy słownik: {nazwa:referencja}
+    #nazwy = pd.unique(df.short)
+    nazwy = ref.short
     kod = []
     for n in nazwy:
-        idx = df.loc[:,'nazwa'] == n
-        val = pd.unique(df.loc[idx,'referencja'])[0]
+        idx = df.loc[:,'short'] == n
+        val = pd.unique(df.loc[idx,'true'])[0]
         kod.append(val)
     
     mapaNazw = dict((zip(kod,nazwy)))
+    print(f'mapaNazw:\n{mapaNazw}\n')
 
     # # na podstawie 'mapaNazw' tworzy indeks nazw dla cross matrix
     newIndex = []
     tmp = cros.columns.values.tolist()
-
-    for i,k in enumerate(mapaNazw.keys()):
-        if tmp[i] == k:
-            newIndex.append(mapaNazw.get(k))
+    print(f'\n\ntmp:\n{tmp}\n')
+    for i in tmp:
+        newIndex.append(mapaNazw[i])
 
     # 'newIndex' - zmienia nazwy kolumn i wierszy
+    print(f'\n\ntutttttt:\n\tcros.shape: {cros.shape}\n\n')
     cros.columns = newIndex
     cros.axes[1].name='predicted'
     cros.index = newIndex
-    cros.axes[0].name='referencje'
+    cros.axes[0].name='true'
     
     # dodaje sumy wierszy i kolumn
     sum1 = cros.sum(axis=0)
@@ -458,32 +568,58 @@ if __name__ == '__main__':
     args = parsujArgumenty()
     args = przygotujDaneInput(args)
     
-    if args['verbose']:
+    if args.verbose:
         print('1. Argumenty:')
-        prd(args)
+        prd(vars(args))
     
     
     # ================================================================================
     # 2. Odczyt danych wejściowych
     # ================================================================================
-    if not args['cross']:
+    
+    #_2.1. Dane po klasyfikacji
+    if not args.cross:
         # dane wejściowe to dane po klasyfikacji - przynajmniej 3 kolumny
-        data = pd.read_csv(args['input'],sep=';')
+        data = pd.read_csv(args.input,sep=';')
+        #data.astype({'predicted':np.uint8})
+        idx = data.predicted.isna()
+        print(f'isnan??:\n{data[idx]}\n\n')
+    
+        # 2.1.1. Pobierz dane referencyjne
         
-        # macierz confusion
-        cros = crossT(data)      
+        ref = pd.read_csv(args.ref,sep=';')
         
+        if args.verbose:
+            print(f'2.1.1. Dane referencyjne:\n{ref}\n')
+        
+        # 2.1.2. Macierz confusion
+        cros = crossT(data,ref)
+        #cros = walidujCross(cros,)
+    
+    
+    
+        # 
+        
+        
+
+        # 2.1.1. Waliduj cros: mogą być różne liczby kolumn i wierszy - gdy nie ma wszystkich klas
+        # wyrównaj liczbę wierszy i kolumn
+
+
+
+    
+    #_ 2.2. Cros matrix zamiast danych po klasyfikacji
     else:
         #dane wejściowe to cross matrix - tworzy pustą dataFrame jako 'data'
         data = pd.DataFrame()
-        cros = pd.read_csv(args['input'],sep=';',index_col=0)
+        cros = pd.read_csv(args.input,sep=';',index_col=0)
         cros = cros.astype('int')
         
-        if args['revers']:
+        if args.revers:
             # zmiana układu kolumn w macierzy na: kolumny to klasyfikacja, wiersze referencje
             cros = cros.T
         
-    if args['verbose']:
+    if args.verbose:
         # printuj dane wejściowe
         print('2. Dane wejściowe i confiusion matrix:')
         
@@ -506,7 +642,7 @@ if __name__ == '__main__':
     # ================================================================================    
 
     trueFalse = trueFalseTable(cros)
-    if args['verbose']:
+    if args.verbose:
         print(f'3. True/false table:\n{trueFalse}\n\n')    
 
     
@@ -529,7 +665,7 @@ if __name__ == '__main__':
     
     classicAcc = pd.DataFrame({'Overall':oacc1, 'user':user, 'producer': producer, 'OmissionEr':erom, 'CommissionEr':ercom})
 
-    if args['verbose']:
+    if args.verbose:
         print(f'''4. Tradycyjne, klasyczne zestawienie dokładności:\n''')
         print(f'''\t4.1. Overall Accuracy: {oacc}\n''')
         print(f'''\t4.2. Zestawienie dokładności:\n{classicAcc}\n''')
@@ -551,7 +687,7 @@ if __name__ == '__main__':
 
     modern1 = modern1.apply(np.round,decimals=7)
     
-    if args['verbose']:
+    if args.verbose:
         tmp = modern1*100
         tmp = tmp.apply(np.round,decimals=0)
         print(f'''5. Nowoczesne zestawienie dokładności:\n''')
@@ -571,7 +707,7 @@ if __name__ == '__main__':
 
     modern2 = modern2.apply(np.round,decimals=7)
 
-    if args['verbose']:
+    if args.verbose:
         tmp = modern2*100
         tmp = tmp.apply(np.round,decimals=0)
         print(f'''\t5.2. Wskaźniki dodatkowe 'factors2':\n{tmp}\n''')    
@@ -582,23 +718,23 @@ if __name__ == '__main__':
     # 6. Zapisywanie danych
     # ================================================================================
 
-    if args['save']:
-        if args['verbose']:
+    if args.save:
+        if args.verbose:
             print(f'''\t6.1. Polecenia zapisywania danych:\n''')
             
-        for key,val in args['save'].items():
+        for key,val in args.save.items():
             polecenie = f'''{key}.to_csv('{val}',sep=';')'''
-            if args['verbose']:
+            if args.verbose:
                 print(f'\t{key}:   {polecenie}')
             eval(polecenie)
             
     
     dataFrames ={}
-    if args['raport'] and args['save']:
-        if args['verbose']:
+    if args.raport and args.save:
+        if args.verbose:
             print(f'''\n\n\t6.2. Polecenia tworzenia raportu:\n''')
             
-        tmpLoader = jinja2.FileSystemLoader(args['runDir'])
+        tmpLoader = jinja2.FileSystemLoader(args.runDir)
         env = jinja2.Environment(loader=tmpLoader)
         # template
         try:
@@ -610,13 +746,13 @@ if __name__ == '__main__':
                 z którego został uruchomiony skrypt!!!\n\n''')
         
         else:
-            for key,val in args['save'].items():
+            for key,val in args.save.items():
                 polecenie = f'''{key}.to_html()'''
-                if args['verbose']:
+                if args.verbose:
                     print(f'\t{key}:   {polecenie}')
                 dataFrames[key] = eval(polecenie)
             
-            with open(args['raport'],'w') as f:
+            with open(args.raport,'w') as f:
                 f.write(tm.render(dataFrames=dataFrames))
     
     else:
