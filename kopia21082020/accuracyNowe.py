@@ -33,71 +33,26 @@ Metryki złozone:
 '''.format(wersja)
 
 
-import sys, os, json, argparse, textwrap
-from pathlib import Path
-from importlib import import_module
+import sys
+import pandas as pd
 
+sys.path.append('/home/u1/03_Programowanie/03Python/skrypty/skryptyCht2@agh/generals/')
 sys.path.append('/home/u1/03_Programowanie/03Python/00Moduly/')
 
-#########################################################################################################
+import os, json, jinja2
+import argparse    # moduł zalecany w pythonie do parsowania argumentów lini poleceń
+import textwrap
+from printing import printDict, printList
+from raportBase import SimpleRaport
+from indeksy import accClasic, accIndex, accClasicBin
+from crossMatrixClass import ConfusionMatrix
+from binTF import BinTFtable
 
-# wzór listy: ('nazwa_modulu', 'nazwa_submoulu, klasy, funkcji', 'alias')
-moduly = [('numpy','','np'),('pandas','','pd'),('tabulate','tabulate',''),('raportBase','SimpleRaport',''),\
-          ('indeksy','accClasic',''), ('indeksy','accIndex',''), ('indeksy','accClasicBin',''),\
-          ('prprint','printDict',''),('prprint','printList',''), ('crossMatrixClass','ConfusionMatrix',''),\
-          ('binTF','BinTFtable','')]
+from pathlib import Path
 
+import numpy as np
+from tabulate import tabulate
 
-def importuj(moduly):
-    brak = []
-    for (modulName, subModul, alias) in moduly:
-        # importuj same moduły np. import fiona lub import numpy as np
-        if subModul == '':
-            try:
-                tmp = import_module(modulName)
-            except ImportError as err:
-                brak.append(modulName)
-                tmp = False
-        
-        # importuj submoduły i/lub clasy funkcje - są 3 przypadki:
-        #   - import numpy as np    - import jako alias
-        #   - import rasterio.mask  - import sub modułu
-        #   - from prprint import printDict  - import klasy/funkcji z modułu
-
-        elif subModul != '':
-            # spróbuj pobrać jako podmoduł: 'modul.submodul'
-            try:
-                tmp = import_module(f'.{subModul}', modulName)
-            except:
-                tmp = False
-                
-            # spróbuj pobrać jako atrybut modułu
-            if not tmp:
-                try:
-                    tmpModule = import_module(modulName)
-                    tmp = getattr(tmpModule, subModul)
-                except ImportError as err:
-                    tmp = False
-                    
-        if not tmp:
-            brak.append(modulName)
-            
-        else:
-            if alias != '':
-                globals()[alias] = tmp
-
-            elif subModul != '':
-                globals()[subModul] = tmp
-
-            else:
-                globals()[modulName] = tmp
-
-    if len(brak) != 0:
-        print(f'''\nBrakujące moduły:\n{brak}\n\nMoże istnieje środowisko 'gis' - 'conda activate gis'.\n''')
-        sys.exit()
-
-
-importuj(moduly) # import modułów ...........................
 
 
 #########################################################################################################
@@ -109,7 +64,7 @@ def parsujArgumenty():
     parser = argparse.ArgumentParser(formatter_class = argparse.RawTextHelpFormatter,description=opis)
     
     
-    parser.add_argument('input',  type=str,   help=textwrap.fill(f'''Adres pliku 'csv' z danymi. Dany mogą być:
+    parser.add_argument('input',  type=str,   help=textwrap.fill(f'''Adres pliku 'csv' z danymi. Dane to:
                                                                 1. Surowe dane - przynajmniej trzy kolumny:
                                                                 ----------------------------    
                                                                 | nazwa | true | predicted |
@@ -118,23 +73,17 @@ def parsujArgumenty():
                                                                 | trawa |   5  |     3     |
                                                                 ----------------------------
                                                                 :
+                                                                    gdzie:
+                                                                - 'nazwa' - skrócone nazwy roślin np. owies,
+                                                                - 'predict' np. 5 - wynik klasyfikacji
+                                                                - 'true' np. 7 - prawdziwa etykieta klasy.
                                                                 
-                                                                .    gdzie:
-                                                                .       - 'nazwa'     - skrócone nazwy roślin np. owies,
-                                                                .       - 'predicted' - wynik klasyfikacji, np. 5
-                                                                .       - 'true'      - prawdziwa etykieta klasy np. 7.
-                                                                
-                                                                2. Cross matrix - gotowa tabela z opisami kolumn/wierszy i sumami kolumn/wierszy. 
-                                                                3. binTF - tabela TP, TN, FP, FN.''',width = 70))
+                                                                2. Cross matrix - gotowa tabela z opisami i sumami. Wymaga podania argumentu opcjonalnego '-c'.''',width = 70))
     
     parser.add_argument('-d','--dataType', type=str,  help=textwrap.fill('''Mówi czym są dane wejściowe. Możliwości:
-        
                                                         - 'data' dane po klasyfikacji
-                                                        
                                                         - 'cros' cros matrix
-                                                        
                                                         - 'bin' binTF.
-                                                        
                                                         Domyślnie 'data'.''', width = 100), default = 'data')
     
     parser.add_argument('-p','--precision', type=int,  help=textwrap.fill('''Dokładność. Domyślnie 4 miejsca po przecinku.''', width = 100), default = 4)
@@ -155,9 +104,8 @@ def parsujArgumenty():
     
     parser.add_argument('-rf','--ref',   help=textwrap.fill('''Adres pliku 'csv' z danymi referencyjnymi - 3 kolumny:
                                                             'true;short;long'. Domyślnie adres pliku 'input' z dodatkowym członem 'true' np.:
-                                                            .   - input: 'ndviKlasyfik.csv'
-                                                            
-                                                            .   - ref:  'ndviKlasyfik_true.csv'.''', width = 100), default = 'default')
+                                                            - input: 'ndviKlasyfik.csv'
+                                                            - ref:  'ndviKlasyfik_true.csv'.''', width = 100), default = 'default')
     
     parser.add_argument('-v','--verbose',   help=textwrap.fill(u"Wyświetla bardziej szczegółowe informacje.", width = 100), action = 'store_true')
     
@@ -210,7 +158,7 @@ class AccRaport(SimpleRaport):
         ''' Dane w tym skrypcie to pd.DataFrame. Przeciążenie orygonalnej
         metody polega na konwersji dataFrame do html-a.
         Input:
-            - self.data:    lista danych, lista [pd.DataFrame, pd.DataFrame,...]
+            - self.data:    lista danych, tu pd.DataFrame
         '''
         htmlData = [dane.to_html() for dane in self.data]
         dataToRender = dict(zip(self.opis,htmlData))
@@ -224,7 +172,7 @@ class AccRaport(SimpleRaport):
 
 
 if __name__ == '__main__':
-    print()
+    print('...')
     prl = printList().printL
     prd = printDict().printD
 
@@ -272,7 +220,7 @@ if __name__ == '__main__':
         spr = set(['TP','TN','FP','FN'])
         if spr.issubset(kols):
             binTF = binTF.T
-            #print(f'\ntuu:\n{binTF}\n\n')
+            print(f'\ntuu:\n{binTF}\n\n')
         
         wykaz =['binTF']
         
@@ -282,7 +230,7 @@ if __name__ == '__main__':
         cros = None
         
     if args.verbose:
-        print(f'2. Dane wejściowe:\n') 
+        print(f'2. Dane wejściowe:\n\n') 
         for it in wykaz:
             print(f'''{it}:\n{eval(it)}\n\n''')    
     
