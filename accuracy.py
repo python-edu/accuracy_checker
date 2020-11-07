@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-wersja = 'w1.2020.06.30'
+wersja = 'w2.2020.11.07'
 opis = '''
 Wersja skryptu: {0}.
 
@@ -195,7 +195,7 @@ def przygotujDaneInput(args):
         args.ref = Path(args.ref).resolve().as_posix()
     
     # jeśli dane input to 'binTF' to niepotrzebny jest plik 'ref'
-    if args.dataType == 'bin':
+    if args.dataType == 'bin' or args.dataType == 'cros':
         args.ref = None
     
     return args
@@ -257,11 +257,11 @@ if __name__ == '__main__':
         toSave=['ref','cros','crosFull','binTF']
         
     elif args.dataType == 'cros':
-        ref  = pd.read_csv(args.ref,sep=args.sep)
+        
         cros = pd.read_csv(args.input,sep=args.sep,index_col=0)
         bin = BinTFtable(cros)
         binTF = bin.binTF
-        wykaz =['ref','cros','binTF']
+        wykaz =['cros','binTF']
         toSave=['binTF']
         
     else:
@@ -323,7 +323,24 @@ if __name__ == '__main__':
 
     if args.verbose:
         print(f'''\t4. Wskaźniki dodatkowe:\n\nmodern1:\n{modern1}\n\nmodern2:\n{modern2}\n''')
+ 
+ 
+    # ================================================================================
+    # 4.1. Liczy średnie wartości wskaźników 'modern1' i 'modern2'
+    # ================================================================================
+ 
+    m1 = np.round(modern1.mean(),4)
+    m2 = np.round(modern2.mean(),4)
     
+    modernMean = pd.DataFrame(pd.concat([m1,m2]))
+    
+    #modernMean.index.name = 'AccIndex'
+    modernMean.columns = ['Value']
+    
+    toSave.extend(['modernMean'])
+    
+    if args.verbose:
+        print(f'''\t4. Wartości średnie wskaźników modern1 i modern2:\n\nmodernMean:\n{modernMean}\n\n''')
     # ================================================================================
     # 5. Zapisywanie danych
     # ================================================================================
