@@ -248,7 +248,7 @@ if __name__ == '__main__':
         ref  = pd.read_csv(args.ref,sep=args.sep)
         
         cr = ConfusionMatrix(data,ref)
-        cros = cr.cros
+        cros = cr.cros1
         crosFull = cr.crosFull
         
         bin = BinTFtable(cros)
@@ -292,7 +292,7 @@ if __name__ == '__main__':
     # ================================================================================
     
     if cros is not None:
-        acc1 = accClasic(cros.iloc[:-1,:-1],args.precision)
+        acc1 = accClasic(cros,args.precision)
         
     else:
         acc1 = accClasicBin(binTF,args.precision)
