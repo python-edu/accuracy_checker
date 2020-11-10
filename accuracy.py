@@ -44,7 +44,7 @@ sys.path.append('/home/u1/03_Programowanie/03Python/00Moduly/')
 # wzór listy: ('nazwa_modulu', 'nazwa_submoulu, klasy, funkcji', 'alias')
 moduly = [('numpy','','np'),('pandas','','pd'),('tabulate','tabulate',''),('raportBase','SimpleRaport',''),\
           ('indeksy','accClasic',''), ('indeksy','accIndex',''), ('indeksy','accClasicBin',''),\
-          ('prprint','printDict',''),('prprint','printList',''), ('crossMatrixClass','ConfusionMatrix',''),\
+          ('prprint','printDict',''),('prprint','printList',''), ('crossMatrixClass','ConfusionMatrix',''),('crossMatrixClass','OpisDlaConfMatrix',''),\
           ('binTF','BinTFtable','')]
 
 
@@ -110,19 +110,19 @@ def parsujArgumenty():
     
     
     parser.add_argument('input',  type=str,   help=textwrap.fill(f'''Adres pliku 'csv' z danymi. Dany mogą być:
-                                                                1. Surowe dane - przynajmniej trzy kolumny:
+                                                                1. Surowe dane - przynajmniej dwie kolumny:
                                                                 ----------------------------    
-                                                                | nazwa | true | predicted |
-                                                                | ----- | ---- | --------- |
-                                                                | owies |   1  |     2     |
-                                                                | trawa |   5  |     3     |
+                                                                | actual | predicted |
+                                                                | --------- | --------- |
+                                                                |        1  |     2     |
+                                                                |        5  |     3     |
                                                                 ----------------------------
                                                                 :
                                                                 
                                                                 .    gdzie:
-                                                                .       - 'nazwa'     - skrócone nazwy roślin np. owies,
+                                                                .  
                                                                 .       - 'predicted' - wynik klasyfikacji, np. 5
-                                                                .       - 'true'      - prawdziwa etykieta klasy np. 7.
+                                                                .       - 'actual'      - prawdziwa etykieta klasy np. 7.
                                                                 
                                                                 2. Cross matrix - gotowa tabela z opisami kolumn/wierszy i sumami kolumn/wierszy. 
                                                                 3. binTF - tabela TP, TN, FP, FN.''',width = 70))
@@ -153,11 +153,8 @@ def parsujArgumenty():
     parser.add_argument('-rap','--raport',   help=textwrap.fill('''Generuje raport w html, czyli wszytskie tabele
                                                             w jednym pliku html - raport.html''', width = 100), action = 'store_true')
     
-    parser.add_argument('-rf','--ref',   help=textwrap.fill('''Adres pliku 'csv' z danymi referencyjnymi - 3 kolumny:
-                                                            'true;short;long'. Domyślnie adres pliku 'input' z dodatkowym członem 'true' np.:
-                                                            .   - input: 'ndviKlasyfik.csv'
-                                                            
-                                                            .   - ref:  'ndviKlasyfik_true.csv'.''', width = 100), default = 'default')
+    parser.add_argument('-rf','--ref',   help=textwrap.fill('''Adres pliku 'csv' z danymi referencyjnymi - 2 kolumny:
+                                                            'label;name'. '.''', width = 100), default = None)
     
     parser.add_argument('-v','--verbose',   help=textwrap.fill(u"Wyświetla bardziej szczegółowe informacje.", width = 100), action = 'store_true')
     
@@ -180,24 +177,15 @@ def przygotujDaneInput(args):
         args.workDir = args.input.parent.as_posix()
         args.input = args.input.as_posix()
     
-
    
     if args.raport:
         name = Path(args.input).name.split('.')[0]
         name = f'{name}_raport.html'
         args.raport = Path(args.input).with_name(name).as_posix()
      
-    if args.ref == 'default':
-        name = Path(args.input).name.split('.')[0]
-        name = f'{name}_true.csv'
-        args.ref = Path(args.input).with_name(name).as_posix()
-    else:
+    if args.ref is not None:
         args.ref = Path(args.ref).resolve().as_posix()
-    
-    # jeśli dane input to 'binTF' to niepotrzebny jest plik 'ref'
-    if args.dataType == 'bin' or args.dataType == 'cros':
-        args.ref = None
-    
+        
     return args
 
 
@@ -245,19 +233,25 @@ if __name__ == '__main__':
     
     if args.dataType == 'data':
         data = pd.read_csv(args.input,sep=args.sep)
-        ref  = pd.read_csv(args.ref,sep=args.sep)
+        #ref  = pd.read_csv(args.ref,sep=args.sep)
         
-        cr = ConfusionMatrix(data,ref)
+        cr = ConfusionMatrix(data)
         cros = cr.cros1
-        crosFull = cr.crosFull
+        wykaz =['data','cros']
+        if args.ref is not None:
+            ref  = pd.read_csv(args.ref,sep=args.sep)
+            crosFull = OpisDlaConfMatrix(cros,ref).crosFull
+            wykaz.extend(['ref','crosFull'])
         
         bin = BinTFtable(cros)
         binTF = bin.binTF
-        wykaz =['data','ref','cros','crosFull','binTF']
-        toSave=['ref','cros','crosFull','binTF']
+        wykaz.append('binTF')
         
+        #wykaz =['data','ref','cros','crosFull','binTF']
+        toSave=wykaz[1:]
+ 
+ 
     elif args.dataType == 'cros':
-        
         cros = pd.read_csv(args.input,sep=args.sep,index_col=0)
         bin = BinTFtable(cros)
         binTF = bin.binTF
