@@ -236,11 +236,11 @@ if __name__ == '__main__':
         #ref  = pd.read_csv(args.ref,sep=args.sep)
         
         cr = ConfusionMatrix(data)
-        cros = cr.cros1
+        cros = cr.cros
         wykaz =['data','cros']
         if args.ref is not None:
             ref  = pd.read_csv(args.ref,sep=args.sep)
-            crosFull = OpisDlaConfMatrix(cros,ref).crosFull
+            crosFull = OpisDlaConfMatrix(cr.cros1,ref).crosFull
             wykaz.extend(['ref','crosFull'])
         
         bin = BinTFtable(cros)
