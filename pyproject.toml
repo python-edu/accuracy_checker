@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "accuracy_for_classification"
+version = '0.1.0'
+authors = [
+    {name = "Piotr Kramarczyk", email = "gorgany100@o2.pl"},
+]
+
+description = "Skrypt oblicza różne wskaźniki dokładności dla klasyfikacji."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy", "pandas", "tabulate", "jinja2",
+    "simpleutils", "acc_pack"
+]
+
+
+[project.scripts]
+# lunet - learn unet
+accuracy = "acc.main:main"
+
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages]
+find = {}  # Scan the project directory with the default parameters
+
+#[tool.setuptools.packages.find]
+#where = ["src", "data"]
+
+#[tool.setuptools.package-data]
+#data = ["*.txt", "*.md", "*.sqlite"]
+

@@ -1,0 +1,22 @@
+name: gis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - fiona
+  - gdal
+  - geojson
+  - geopy
+  - geotiff
+  - ipykernel
+  - ipython
+  - jedi
+  - jinja2
+  - matplotlib
+  - numpy
+  - pandas
+  - proj
+  - rasterio
+  - scipy
+  - shapely
+  - tabulate
