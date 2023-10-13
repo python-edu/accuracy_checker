@@ -18,6 +18,8 @@ from simpleutils.src import argspk as apk
 
 # --
 
+# szerokość tekstu dla wyświtlania pomocy
+wt = 80
 
 description = """
 Skrypt sprawdza jakość klasyfikacji:
@@ -120,46 +122,50 @@ def parsuj_argumenty():
 
     txt = '''Dokładność. Domyślnie 4 miejsca po przecinku.'''
     parser.add_argument('-p', '--precision', type=int,
-                        help=textwrap.fill(txt, width=100), default=4)
+                        help=textwrap.fill(txt, width=wt), default=4)
 
-    txt = '''Wskazuje, że układ cross matrix jest odwrócony tzn. w kolumnach
-    są dane referencyjne (true) a w wierszach wyniki klasyfikacji obrazu
-    (predict).'''
+    txt = 'Wskazuje, że układ cross matrix jest odwrócony tzn. w kolumnach' \
+        'są dane referencyjne (true) a w wierszach są wyniki klasyfikacji' \
+        'obrazu (predict).'
     parser.add_argument('-r', '--revers', action='store_true',
-                        help=textwrap.fill(txt, width=100))
+                        help=textwrap.fill(txt, width=wt))
 
     # -------------------------------------------------------------------------
 
-    txt = '''Określa separator kolumn pliku csv. Domyślnie to średnik ';'.'''
+    txt = "Określa separator kolumn pliku csv. Domyślnie to średnik ';'."
     parser.add_argument('-sp', '--sep', type=str,
-                        help=textwrap.fill(txt, width=100), default=';')
+                        help=textwrap.fill(txt, width=wt), default=';')
 
-    txt = '''Powoduje, zapisanie wyników do osobnych plików csv: cros.csv,
-    trueFalse.csv, classicAcc.csv, modern1.csv, modern2.csv.'''
-    parser.add_argument('-s', '--save', help=textwrap.fill(txt, width=100),
-                        action='store_true')
+    txt = '''Powoduje, zapisanie wyników do osobnych plików csv:
+      - cros.csv,
+      - trueFalse.csv,
+      - classicAcc.csv,
+      - modern1.csv, modern2.csv.
+               '''
+    parser.add_argument('-s', '--save', help=txt, action='store_true')
 
-    txt = '''Generuje raport w html, czyli wszytskie tabele w jednym pliku html
-    - raport.html'''
-    parser.add_argument('-rap', '--raport', help=textwrap.fill(txt, width=100),
-                        action='store_true')
+    txt = '''Generuje raport w html: wszytskie tabele w jednym pliku html:
+    - raport.html.
+    '''
+    parser.add_argument('-rap', '--raport', help=txt, action='store_true')
 
     # -------------------------------------------------------------------------
 
     txt = '''Adres pliku 'csv' z danymi referencyjnymi - 2 kolumny:
-       'label;name'. '.'''
-    parser.add_argument('-rf', '--ref', type=str,
-                        help=textwrap.fill(txt, width=100), default=None)
+        - 'label;name'.
+        '''
+    parser.add_argument('-rf', '--ref', type=str, help=txt, default=None)
 
-    txt = "Czy zapisywać wyniki jako csv czy tylko raport?."
+    txt = "Wskazuje, że wynikiem skryptyu ma być tylko raport.html. " \
+        " Domyślnie oprócz raportu generuje również pliki csv."
     parser.add_argument('-f', '--full_save',
-                        help=textwrap.fill(txt, width=100),
+                        help=textwrap.fill(txt, width=wt),
                         action='store_true')
 
     # -------------------------------------------------------------------------
 
     txt = "Wyświetla bardziej szczegółowe informacje."
-    parser.add_argument('-v', '--verbose', help=textwrap.fill(txt, width=100),
+    parser.add_argument('-v', '--verbose', help=textwrap.fill(txt, width=wt),
                         action='store_true')
 
     args = parser.parse_args()
