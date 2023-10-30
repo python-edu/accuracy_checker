@@ -1,39 +1,18 @@
 # -*- coding: utf-8 -*-
-
-from pathlib import Path
+import numpy as np
+import pandas as pd
 
 # my modules import
 from simpleutils.src import verbosepk as vb
+from acc_pack.src import metryki
 
 # local imports
 from acc.src import args as parser  # parser argumentów w osobnym pliku
+from acc.src import read_data  # funkcje do odczytu różnych danych
 from acc.src.raport_base import SimpleRaport
 
-
 # -----------------------------------------------------------------------------
 
-def przygotujDaneInput(args):
-    '''Funkcja przetwarza argumenty wejściowe skryptu'''
-    # ustal katalog z którego uruchamiany jest skrypt
-    args.runDir = Path(__file__).parent.resolve()
-
-    if args.input:
-        args.input = Path(args.input).resolve()
-        args.work_dir = args.input.parent.resolve()
-        args.input = args.input.as_posix()
-
-    if args.raport:
-        name = Path(args.input).name.split('.')[0]
-        name = f'{name}_raport.html'
-        args.raport = Path(args.input).with_name(name).as_posix()
-
-    if args.ref is not None:
-        args.ref = Path(args.ref).resolve().as_posix()
-
-    return args
-
-
-# -----------------------------------------------------------------------------
 
 class AccRaport(SimpleRaport):
 
@@ -49,6 +28,56 @@ class AccRaport(SimpleRaport):
 # ---
 
 
+def acc_from_cros(data, args):
+    """
+    Oblicza wskaźniki dokładności na podstawie crossmatrix lub binary cros.
+    Oblicza tradycyjne dla teledetekcji wskaźniki.
+    Args:
+      - data:  - cross matrix (cros), bez podsumowań wierszy i kolumn!!!
+               - binary cros matrix (bin_cros)
+      - args:  obiekt z atrybutami, zwykle namespase z argparse
+    """
+    if args.data_type in ['data', 'cros', 'cros_raw', 'cros_full']:
+        acc = metryki.AccClasic(data, args.precision)
+
+    else:
+        acc = metryki.AccClasicBin(data, args.precision)
+
+    classic_acc = acc.tabela
+
+    return classic_acc
+
+# ---
+
+
+def acc_from_bin_cros(data, args):
+    """
+    Oblicza wskaźniki dokładności na podstawie binary cros.
+    Oblicza wskaźniki stosowane w maszynowym uczeniu.
+    Args:
+      - data:  binary cros matrix (bin_cros)
+      - args:  obiekt z atrybutami, zwykle namespase z argparse
+    """
+
+    acc = metryki.AccIndex(data, precision=args.precision)
+    modern1 = {}
+    modern2 = {}
+
+    for k, v in vars(acc).items():
+        if k in ['acc', 'ppv', 'tpr', 'tnr', 'npv', 'fnr', 'fpr', 'fdr',
+                 'foRate', 'ts', 'mcc']:
+            modern1[k] = v
+        elif k in ['pt', 'ba', 'f1', 'fm', 'bm', 'mk']:
+            modern2[k] = v
+
+    modern1 = pd.DataFrame(modern1)
+    modern2 = pd.DataFrame(modern2)
+
+    return modern1, modern2
+
+# ---
+
+
 def main():
 
     # =========================================================================
@@ -58,169 +87,82 @@ def main():
     args = parser.validuj_args(args)
     vb.verbose(pars=True, **vars(args))
 
+    # =========================================================================
+    # 2. Odczyt danych wejściowych
+    # =========================================================================
+    all_data = read_data.read_data(args)
+    data, cros, cros_full, binary_cros, binary_cros1 = all_data
+    vb.verbose(verbose=args.verbose, data=data, cros=cros, cros_full=cros_full,
+               binary_cros=binary_cros, binary_cros1=binary_cros1)
+
+    # =========================================================================
+    # 3. Tradycyjne, klasyczne wskaźniki dokładności
+    # =========================================================================
+    classic_acc = acc_from_cros(cros, args)
+    vb.verbose(verbose=True, classic_acc=classic_acc)
+
+    # =========================================================================
+    # 4. Nowe wskaźniki dokładności
+    # =========================================================================
+    modern1, modern2 = acc_from_bin_cros(binary_cros, args)
+    vb.verbose(verbose=True, modern1=modern1, modern2=modern2)
+
+    # =========================================================================
+    # 4.1. Liczy średnie wartości wskaźników 'modern1' i 'modern2'
+    # =========================================================================
+
+    m1 = np.round(modern1.mean(), 4)
+    m2 = np.round(modern2.mean(), 4)
+
+    modern_mean = pd.DataFrame(pd.concat([m1, m2]))
+    modern_mean.columns = ['Value']
+
+    vb.verbose(verbose=True, modern_mean=modern_mean)
+
+    # =========================================================================
+    # 5. Zapisywanie danych
+    # =========================================================================
+    names = ["cros", "binary_cros", "classic_acc", "modern1", "modern2"]
+
+    if args.save:
+        pths = [args.out_dir / f'{n}.csv' for n in names]
+        pths = [str(p) for p in pths]
+        args.out_dir.mkdir(exist_ok=True)
+
+        vb.verbose(verbose=True, zapis="""\tZapisywanie plików `csv`:\n""")
+        zapisano = []
+
+        for i, nazwa in enumerate(names):
+            if nazwa == 'cros':
+                nazwa = 'cros_full'
+
+            if nazwa == "binary_cros":
+                nazwa = "binary_cros1"
+
+            data = locals()[nazwa]
+            ad = pths[i]
+            data.to_csv(ad, sep=args.sep)
+            zapisano.append(ad)
+        vb.verbose(verbose=True, zapisano=zapisano)
+
+    # tworzy raport html
+    if args.raport:
+        vb.verbose(verbose=args.verbose,
+                   raport='''\n\tTworzenie i zapis raportu:\n''')
+
+        # dane = [locals()[nazwa] for nazwa in names1]
+        dane = [cros_full, binary_cros1, classic_acc, modern1, modern2]
+        raport = AccRaport(data=dane, opis=names)
+        raport.saveRaport(raportAdres=args.raport)
+
+        vb.verbose(verbose=True, raport_zapisany=args.raport)
+    else:
+        print('''
+              Nie podano opcji '-s' (save) - raport nie zostanie wykonany!
+              \n''')
 # #############################################################################
 
 
 if __name__ == '__main__':
     main()
     wykaz = None
-    # =========================================================================
-    # 2. Odczyt danych wejściowych
-    # =========================================================================
-
-#    if args.dataType == 'data':
-#        data = pd.read_csv(args.input, sep=args.sep)
-#        # ref  = pd.read_csv(args.ref, sep=args.sep)
-#
-#        cr = ConfusionMatrix(data)
-#        cros = cr.cros
-#        wykaz = ['data', 'cros']
-#        if args.ref is not None:
-#            ref = pd.read_csv(args.ref, sep=args.sep)
-#            crosFull = OpisDlaConfMatrix(cr.cros1, ref).crosFull
-#            wykaz.extend(['ref', 'crosFull'])
-#
-#        bin = BinTFtable(cros)
-#        binTF = bin.binTF
-#        wykaz.append('binTF')
-#
-#        # wykaz =['data','ref','cros','crosFull','binTF']
-#        toSave = wykaz[1:]
-#
-#    elif args.dataType == 'cros':
-#        cros = pd.read_csv(args.input, sep=args.sep, index_col=0)
-#        # print(f'\n\n\ntuuuuuuuuuuuuuu:\n\n{cros}\n\n\n')
-#        # to trzeba zapisać jako funkcje lub dodać do klasy crossMatrix!!!
-#        # dodaje sumy wierszy i kolumn
-#        cros1 = cros.copy()
-#        sumRow = cros1.sum(axis=1).to_numpy()
-#        cros1.loc[:, 'sumRow'] = sumRow
-#
-#        sumKol = cros1.sum(axis=0).to_numpy()
-#        cros1.loc['sumCol', :] = sumKol
-#
-#        cros1 = cros1.astype('int')
-#        # ---------------------------------------------------------------------
-#
-#        if args.ref is not None:
-#            ref = pd.read_csv(args.ref, sep=args.sep)
-#            crosFull = OpisDlaConfMatrix(cros1, ref).crosFull
-#            wykaz = ['ref', 'crosFull']
-#
-#        bin = BinTFtable(cros)
-#        binTF = bin.binTF
-#        if wykaz is None:
-#            wykaz = ['cros', 'binTF']
-#        else:
-#            wykaz.insert(0, 'cros')
-#            wykaz .append('binTF')
-#
-#        toSave = ['cros', 'crosFull', 'binTF']
-#
-#    else:
-#        binTF = pd.read_csv(args.input, sep=args.sep, index_col=0)
-#        # sprawdź w jakim układzie jest data DataFrame
-#        # print(f'\ntuu:\n{binTF}\n\n')
-#        kols = set(binTF.columns.to_list())
-#        spr = set(['TP', 'TN', 'FP', 'FN'])
-#        if spr.issubset(kols):
-#            binTF = binTF.T
-#            # print(f'\ntuu:\n{binTF}\n\n')
-#
-#        wykaz = ['binTF']
-#
-#        # w układzie pionowym - na potrzeby raportu
-#        binTFv = binTF.T
-#        toSave = ['binTFv']
-#        cros = None
-#
-#    vb.verbose(verbose=args.verbose, wykaz=wykaz)
-#    # if args.verbose:
-#    #     print('2. Dane wejściowe:\n')
-#    #     print(f'wykaz: {wykaz}\n\n')
-#    #     for it in wykaz:
-#    #         print(f'''{it}:\n{eval(it)}\n\n''')
-#
-#    # =========================================================================
-#    # 3. Tradycyjne, klasyczne wskaźniki dokładności
-#    # =========================================================================
-#
-#    if cros is not None:
-#        acc1 = accClasic(cros, args.precision)
-#        print(100*'x')
-#
-#    else:
-#        acc1 = accClasicBin(binTF, args.precision)
-#
-#    classicAcc = acc1.tabela
-#    vb.verbose(verbose=args.verbose,
-#               classicAcc=classicAcc)
-#
-#    toSave.append('classicAcc')
-#    # ================================================================================
-#    # 4. Nowe wskaźniki dokładności
-#    # ================================================================================
-#    acc2 = accIndex(binTF, precision=args.precision)
-#    modern1 = {}
-#    modern2 = {}
-#
-#    for k, v in vars(acc2).items():
-#        if k in ['acc', 'ppv', 'tpr', 'tnr', 'npv', 'fnr', 'fpr', 'fdr',
-#                 'foRate', 'ts', 'mcc']:
-#            modern1[k] = v
-#        elif k in ['pt', 'ba', 'f1', 'fm', 'bm', 'mk']:
-#            modern2[k] = v
-#
-#    modern1 = pd.DataFrame(modern1)
-#    modern2 = pd.DataFrame(modern2)
-#
-#    toSave.extend(['modern1', 'modern2'])
-#
-#    vb.verbose(verbose=args.verbose,
-#               modern1=modern1, modern2=modern2)
-#
-#    # =========================================================================
-#    # 4.1. Liczy średnie wartości wskaźników 'modern1' i 'modern2'
-#    # =========================================================================
-#
-#    m1 = np.round(modern1.mean(), 4)
-#    m2 = np.round(modern2.mean(), 4)
-#
-#    modernMean = pd.DataFrame(pd.concat([m1, m2]))
-#
-#    modernMean.columns = ['Value']
-#
-#    toSave.extend(['modernMean'])
-#
-#    vb.verbose(verbose=args.verbose, modernMean=modernMean)
-#    # =========================================================================
-#    # 5. Zapisywanie danych
-#    # =========================================================================
-#
-#    if args.save and args.fullSave:
-#        vb.verbose(verbose=args.verbose,
-#                   zapis="""\t6.1. Polecenia zapisywania danych:\n""")
-#
-#        for nazwa in toSave:
-#            if nazwa == 'binTF':
-#                binTF = binTF.T
-#            ad = Path(args.work_dir).joinpath(f'res_{nazwa}.csv')
-#            polecenie = f'''{nazwa}.to_csv('{ad}',sep='{args.sep}')'''
-#            vb.verbose(verbose=args.verbose, polecenie=polecenie)
-#            eval(polecenie)
-#
-#    # tworzy raport html
-#    if args.raport and args.save:
-#        vb.verbose(verbose=args.verbose,
-#                   polecenie='''\n\n\t6.2. Polecenia tworzenia raportu:\n''')
-#
-#        dane = [eval(nazwa) for nazwa in toSave]
-#        raport = AccRaport(data=dane, opis=toSave)
-#        raport.saveRaport(raportAdres=args.raport)
-#
-#    else:
-#        print('''
-#              Nie podano opcji '-s' (save) - raport nie zostanie wykonany!
-#              \n''')
-#
-#    print('\n\n......Skrytp zakończony pozytywnie:\n\n')

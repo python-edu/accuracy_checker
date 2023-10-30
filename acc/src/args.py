@@ -54,11 +54,11 @@ def mapa_args():
     k1 = ['input',]
     v1 = ['input']
 
-    k2 = ['data_type', 'precision', 'revers', 'sep']
-    v2 = ['-d', '-p', '-r', '-sp']
+    k2 = ['data_type', 'precision', 'revers', 'sep', 'sums']
+    v2 = ['-d', '-p', '-r', '-sp', '-ss']
 
-    k3 = ['save', 'raport', 'ref', 'full_save']
-    v3 = ['-s', '-rap', '-rf', '-f']
+    k3 = ['out_dir', 'save', 'raport', 'ref', 'full_save']
+    v3 = ['-o', '-s', '-rap', '-rf', '-f']
 
     keys = [*k1, *k2, *k3]
     vals = [*v1, *v2, *v3]
@@ -111,8 +111,11 @@ def parsuj_argumenty():
     # ---
 
     txt = '''Mówi czym są dane wejściowe. Możliwości:
-        - 'data' 2 lub 3 kolumny w pliku csv
-        - 'cros' cros matrix
+        - 'data' - 2 lub 3 kolumny w pliku csv
+        - 'cros_raw' - cros matrix bez opisów wierszy i kolumn - same liczby
+        - 'cros' - cros matrix z opisami wierszy i kolumn, bez sum
+        - 'cros_full' - cros matrix z opisami kolumn i wierszy i z sumami
+          wierszy i kolumn
         - 'bin' binTF.
 
         Domyślnie 'data'.'''
@@ -130,21 +133,33 @@ def parsuj_argumenty():
     parser.add_argument('-r', '--revers', action='store_true',
                         help=textwrap.fill(txt, width=wt))
 
+    txt = 'Dotyczy danych typu `crossmatrix`: zaznacz jeśli dane zawierają ' \
+        'podsumowaie wierszy i kolumn. Domyślnie nie!'
+    parser.add_argument('-ss', '--sums', action='store_true',
+                        help=textwrap.fill(txt, width=wt))
+
     # -------------------------------------------------------------------------
 
     txt = "Określa separator kolumn pliku csv. Domyślnie to średnik ';'."
     parser.add_argument('-sp', '--sep', type=str,
                         help=textwrap.fill(txt, width=wt), default=';')
 
-    txt = '''Powoduje, zapisanie wyników do osobnych plików csv:
+    txt = "Str, nazwa katalogu do zapisu danych. Domyślnie `results`." \
+            "Katalog tworzony jest w katalogu roboczym, czyli nadrzędnym" \
+            "do katalogu z danymi wejściowymi."
+    parser.add_argument('-o', '--out_dir', type=str,
+                        help=textwrap.fill(txt, width=wt), default='results')
+
+    txt = '''Domyślnie skrypt wyświetla wyniki na ekranie. Ta opcja powoduje,
+    zapisanie wyników do osobnych plików csv:
       - cros.csv,
-      - trueFalse.csv,
-      - classicAcc.csv,
+      - binary_cros.csv,
+      - classic_acc.csv,
       - modern1.csv, modern2.csv.
                '''
     parser.add_argument('-s', '--save', help=txt, action='store_true')
 
-    txt = '''Generuje raport w html: wszytskie tabele w jednym pliku html:
+    txt = '''Generuje raport w html: wszystkie tabele w jednym pliku html:
     - raport.html.
     '''
     parser.add_argument('-rap', '--raport', help=txt, action='store_true')
@@ -183,12 +198,15 @@ def validuj_args(args):
             args.input = Path(args.input).expanduser()
         else:
             args.input = Path(args.input).resolve()
+
         args.work_dir = args.input.parent
 
-    if args.raport:
+    if args.raport or args.save:
+        args.out_dir = args.work_dir / args.out_dir
+
         name = Path(args.input).name.split('.')[0]
         name = f'{name}_raport.html'
-        args.raport = Path(args.input).with_name(name)
+        args.raport = args.out_dir / name
 
     if args.ref is not None:
         args.ref = Path(args.ref).resolve()
