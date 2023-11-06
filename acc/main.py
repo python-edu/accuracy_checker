@@ -157,10 +157,10 @@ def main():
 
         vb.verbose(verbose=True, raport_zapisany=args.raport)
     else:
-        print('''
-              Nie podano opcji '-s' (save) - raport nie zostanie wykonany!
-              \n''')
-# #############################################################################
+        msg1 = '\t Aby zapisać wyniki do plików csv użyj flagi `-s`.'
+        msg2 = '\t Aby wygenerować raport html użyj flagi `-rap`.'
+        vb.verbose(verbose=True, Save=msg1, Raport=msg2)
+# ---
 
 
 if __name__ == '__main__':

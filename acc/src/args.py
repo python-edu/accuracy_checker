@@ -24,8 +24,9 @@ wt = 80
 description = """
 Skrypt sprawdza jakość klasyfikacji:
    - tworzy lub wykorzystuje istniejącą cross matrix
-   - oblicza metryki dokładności.
+   - oblicza metryki dokładności."""
 
+info = """
 Metryki proste:
    - acc:  accuracy
    - ppv:  precision or positive predictive value
@@ -145,8 +146,8 @@ def parsuj_argumenty():
                         help=textwrap.fill(txt, width=wt), default=';')
 
     txt = "Str, nazwa katalogu do zapisu danych. Domyślnie `results`." \
-            "Katalog tworzony jest w katalogu roboczym, czyli nadrzędnym" \
-            "do katalogu z danymi wejściowymi."
+          "Katalog tworzony jest w katalogu roboczym, czyli nadrzędnym" \
+          "do katalogu z danymi wejściowymi."
     parser.add_argument('-o', '--out_dir', type=str,
                         help=textwrap.fill(txt, width=wt), default='results')
 
