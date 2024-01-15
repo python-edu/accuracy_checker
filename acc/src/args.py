@@ -199,17 +199,19 @@ def validuj_args(args):
             else:
                 args.input = Path(args.input).resolve()
 
-            args.work_dir = args.input.parent
+            args.work_dir = str(args.input.parent)
+            args.input = str(args.input)
 
         if args.raport or args.save:
-            args.out_dir = args.work_dir / args.out_dir
+            args.out_dir = Path(args.work_dir) / args.out_dir
 
             name = Path(args.input).name.split('.')[0]
             name = f'{name}_raport.html'
-            args.raport = args.out_dir / name
+            args.raport = str(args.out_dir / name)
+            args.out_dir = str(args.out_dir)
 
         if args.ref is not None:
-            args.ref = Path(args.ref).resolve()
+            args.ref = str(Path(args.ref).resolve())
 
     return args
 # --
