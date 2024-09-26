@@ -6,4 +6,3 @@ numpy
 pandas
 jinja2
 /home/u1/03_Programowanie/03Python/00Moduly/simple_utils/dist/simpleutils-0.4.0-py3-none-any.whl
-/home/u1/03_Programowanie/03Python/00Moduly/acc_pack/dist/acc_pack-0.2.0-py3-none-any.whl
