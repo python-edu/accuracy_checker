@@ -4,11 +4,12 @@ import pandas as pd
 
 # my modules import
 from simpleutils.src import verbosepk
-from acc_pack.src import metryki
+# from acc_pack.src import metryki
 
 # local imports
 from acc.src import args as parser  # parser argumentów w osobnym pliku
 from acc.src import read_data  # funkcje do odczytu różnych danych
+from acc.src import metryki
 from acc.src.raport_base import SimpleRaport
 from acc.src import funkcje as fn
 
@@ -16,16 +17,17 @@ from acc.src import funkcje as fn
 
 
 class AccRaport(SimpleRaport):
-
     def _konvertujDane(self):
-        ''' Dane w tym skrypcie to pd.DataFrame. Przeciążenie oryginalnej
+        """Dane w tym skrypcie to pd.DataFrame. Przeciążenie oryginalnej
         metody polega na konwersji dataFrame do html-a.
         Input:
             - self.data:    lista danych, lista [pd.DataFrame, pd.DataFrame,..]
-        '''
+        """
         htmlData = [dane.to_html() for dane in self.data]
         dataToRender = dict(zip(self.opis, htmlData))
         return dataToRender
+
+
 # ---
 
 
@@ -38,7 +40,7 @@ def acc_from_cros(data, args):
                - binary cros matrix (bin_cros)
       - args:  obiekt z atrybutami, zwykle namespase z argparse
     """
-    if args.data_type in ['data', 'cros', 'cros_raw', 'cros_full']:
+    if args.data_type in ["data", "cros", "cros_raw", "cros_full"]:
         acc = metryki.AccClasic(data, args.precision)
 
     else:
@@ -47,6 +49,7 @@ def acc_from_cros(data, args):
     classic_acc = acc.tabela
 
     return classic_acc
+
 
 # ---
 
@@ -65,10 +68,21 @@ def acc_from_bin_cros(data, args):
     modern2 = {}
 
     for k, v in vars(acc).items():
-        if k in ['acc', 'ppv', 'tpr', 'tnr', 'npv', 'fnr', 'fpr', 'fdr',
-                 'foRate', 'ts', 'mcc']:
+        if k in [
+            "acc",
+            "ppv",
+            "tpr",
+            "tnr",
+            "npv",
+            "fnr",
+            "fpr",
+            "fdr",
+            "foRate",
+            "ts",
+            "mcc",
+        ]:
             modern1[k] = v
-        elif k in ['pt', 'ba', 'f1', 'fm', 'bm', 'mk']:
+        elif k in ["pt", "ba", "f1", "fm", "bm", "mk"]:
             modern2[k] = v
 
     modern1 = pd.DataFrame(modern1)
@@ -76,11 +90,11 @@ def acc_from_bin_cros(data, args):
 
     return modern1, modern2
 
+
 # ---
 
 
 def main():
-
     # =========================================================================
     # 1. Parsowanie argumentów wejścia
     # =========================================================================
@@ -99,11 +113,14 @@ def main():
         # =====================================================================
         all_data = read_data.read_data(args)
         data, cros, cros_full, binary_cros, binary_cros1 = all_data
-        vb(verbose=args.verbose,
-           data=fn.df2list(data.head()), cros=fn.df2list(cros),
-           cros_full=fn.df2list(cros_full),
-           binary_cros=fn.df2list(binary_cros),
-           binary_cros1=fn.df2list(binary_cros1))
+        vb(
+            verbose=args.verbose,
+            data=fn.df2list(data.head()),
+            cros=fn.df2list(cros),
+            cros_full=fn.df2list(cros_full),
+            binary_cros=fn.df2list(binary_cros),
+            binary_cros1=fn.df2list(binary_cros1),
+        )
 
         # =====================================================================
         # 3. Tradycyjne, klasyczne wskaźniki dokładności
@@ -115,8 +132,7 @@ def main():
         # 4. Nowe wskaźniki dokładności
         # =====================================================================
         modern1, modern2 = acc_from_bin_cros(binary_cros, args)
-        vb(verbose=True, modern1=fn.df2list(modern1),
-           modern2=fn.df2list(modern2))
+        vb(verbose=True, modern1=fn.df2list(modern1), modern2=fn.df2list(modern2))
 
         # =====================================================================
         # 4.1. Liczy średnie wartości wskaźników 'modern1' i 'modern2'
@@ -126,7 +142,7 @@ def main():
         m2 = np.round(modern2.mean(), 4)
 
         modern_mean = pd.DataFrame(pd.concat([m1, m2]))
-        modern_mean.columns = ['Value']
+        modern_mean.columns = ["Value"]
 
         vb(verbose=True, modern_mean=fn.df2list(modern_mean))
 
@@ -136,7 +152,7 @@ def main():
         names = ["cros", "binary_cros", "classic_acc", "modern1", "modern2"]
 
         if args.save:
-            pths = [args.out_dir / f'{n}.csv' for n in names]
+            pths = [args.out_dir / f"{n}.csv" for n in names]
             pths = [str(p) for p in pths]
             args.out_dir.mkdir(exist_ok=True)
 
@@ -144,8 +160,8 @@ def main():
             zapisano = []
 
             for i, nazwa in enumerate(names):
-                if nazwa == 'cros':
-                    nazwa = 'cros_full'
+                if nazwa == "cros":
+                    nazwa = "cros_full"
 
                 if nazwa == "binary_cros":
                     nazwa = "binary_cros1"
@@ -158,8 +174,7 @@ def main():
 
         # tworzy raport html
         if args.raport:
-            vb(verbose=args.verbose,
-               raport='''\n\tTworzenie i zapis raportu:\n''')
+            vb(verbose=args.verbose, raport="""\n\tTworzenie i zapis raportu:\n""")
 
             # dane = [locals()[nazwa] for nazwa in names1]
             dane = [cros_full, binary_cros1, classic_acc, modern1, modern2]
@@ -168,12 +183,14 @@ def main():
 
             vb(verbose=True, raport_zapisany=args.raport)
         else:
-            msg1 = '\t Aby zapisać wyniki do plików csv użyj flagi `-s`.'
-            msg2 = '\t Aby wygenerować raport html użyj flagi `-rap`.'
+            msg1 = "\t Aby zapisać wyniki do plików csv użyj flagi `-s`."
+            msg2 = "\t Aby wygenerować raport html użyj flagi `-rap`."
             vb(verbose=True, Save=msg1, Raport=msg2)
+
+
 # ---
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
     wykaz = None
