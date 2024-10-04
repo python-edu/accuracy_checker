@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "accuracy_for_classification"
-version = '0.1.0'
+version = '0.1.1'
 authors = [{ name = "Piotr Kramarczyk", email = "gorgany100@o2.pl" }]
 
 description = "Skrypt oblicza różne wskaźniki dokładności dla klasyfikacji."
