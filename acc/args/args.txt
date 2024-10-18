@@ -1,1 +1,0 @@
-input = ~/03_Programowanie/03Python/skrypty/acc/acc/testy/dane01.csv
