@@ -1,196 +1,118 @@
-# -*- coding: utf-8 -*-
+import sys
 import numpy as np
 import pandas as pd
-
-# my modules import
-from simpleutils.src import verbosepk
-# from acc_pack.src import metryki
-
-# local imports
-from acc.src import args as parser  # parser argumentów w osobnym pliku
-from acc.src import read_data  # funkcje do odczytu różnych danych
-from acc.src import metryki
-from acc.src.raport_base import SimpleRaport
-from acc.src import funkcje as fn
-
-# -----------------------------------------------------------------------------
-
-
-class AccRaport(SimpleRaport):
-    def _konvertujDane(self):
-        """Dane w tym skrypcie to pd.DataFrame. Przeciążenie oryginalnej
-        metody polega na konwersji dataFrame do html-a.
-        Input:
-            - self.data:    lista danych, lista [pd.DataFrame, pd.DataFrame,..]
-        """
-        htmlData = [dane.to_html() for dane in self.data]
-        dataToRender = dict(zip(self.opis, htmlData))
-        return dataToRender
-
-
-# ---
-
-
-def acc_from_cros(data, args):
-    """
-    Oblicza wskaźniki dokładności na podstawie crossmatrix lub binary cros.
-    Oblicza tradycyjne dla teledetekcji wskaźniki.
-    Args:
-      - data:  - cross matrix (cros), bez podsumowań wierszy i kolumn!!!
-               - binary cros matrix (bin_cros)
-      - args:  obiekt z atrybutami, zwykle namespase z argparse
-    """
-    if args.data_type in ["data", "cros", "cros_raw", "cros_full"]:
-        acc = metryki.AccClasic(data, args.precision)
-
-    else:
-        acc = metryki.AccClasicBin(data, args.precision)
-
-    classic_acc = acc.tabela
-
-    return classic_acc
-
-
-# ---
-
-
-def acc_from_bin_cros(data, args):
-    """
-    Oblicza wskaźniki dokładności na podstawie binary cros.
-    Oblicza wskaźniki stosowane w maszynowym uczeniu.
-    Args:
-      - data:  binary cros matrix (bin_cros)
-      - args:  obiekt z atrybutami, zwykle namespase z argparse
-    """
-
-    acc = metryki.AccIndex(data, precision=args.precision)
-    modern1 = {}
-    modern2 = {}
-
-    for k, v in vars(acc).items():
-        if k in [
-            "acc",
-            "ppv",
-            "tpr",
-            "tnr",
-            "npv",
-            "fnr",
-            "fpr",
-            "fdr",
-            "foRate",
-            "ts",
-            "mcc",
-        ]:
-            modern1[k] = v
-        elif k in ["pt", "ba", "f1", "fm", "bm", "mk"]:
-            modern2[k] = v
-
-    modern1 = pd.DataFrame(modern1)
-    modern2 = pd.DataFrame(modern2)
-
-    return modern1, modern2
-
-
-# ---
+from pathlib import Path
+from acc.src.args import parsuj_argumenty, info
+from acc.src import functions as fn
+from acc.src.args_data import args_func as afn
+from acc.src.report import AccuracyReport
 
 
 def main():
-    # =========================================================================
-    # 1. Parsowanie argumentów wejścia
-    # =========================================================================
-    args = parser.parsuj_argumenty()
-    args = parser.validuj_args(args)
-    vb = verbosepk.Verbose()
-    vb(verbose=args.verbose, args=vars(args))
+    parser = parsuj_argumenty()
 
-    # ta opcja wyświetla informacje o statystykach blokując wszystko inne!!!
-    if args.info:
-        print(parser.info)
+    # 1. Obsługa argumentów linii poleceń
+    # =====================================================================
+    args = parser.parse_args()
+    args = afn.args_validation(args,
+                               **{'script_name': __file__, 'info': info})
 
+    vb = fn.Verbose(args.verbose)
+    vb(args, "Script arguments:", args_data=True)
+
+
+    # 2. Odczyt danych
+    # =====================================================================
+    if hasattr(args, 'func'):
+        read_data = args.func
     else:
-        # =====================================================================
-        # 2. Odczyt danych wejściowych
-        # =====================================================================
-        all_data = read_data.read_data(args)
-        data, cros, cros_full, binary_cros, binary_cros1 = all_data
-        vb(
-            verbose=args.verbose,
-            data=fn.df2list(data.head()),
-            cros=fn.df2list(cros),
-            cros_full=fn.df2list(cros_full),
-            binary_cros=fn.df2list(binary_cros),
-            binary_cros1=fn.df2list(binary_cros1),
-        )
+        print(args)
+        sys.exit()
 
-        # =====================================================================
-        # 3. Tradycyjne, klasyczne wskaźniki dokładności
-        # =====================================================================
-        classic_acc = acc_from_cros(cros, args)
-        vb(verbose=True, classic_acc=fn.df2list(classic_acc))
+    data, cross, cross_full, bin_cross, bin_cross_rep = read_data(args)
+    vb(bin_cross, 'Binary confusion matrix:')
 
-        # =====================================================================
-        # 4. Nowe wskaźniki dokładności
-        # =====================================================================
-        modern1, modern2 = acc_from_bin_cros(binary_cros, args)
-        vb(verbose=True, modern1=fn.df2list(modern1), modern2=fn.df2list(modern2))
 
-        # =====================================================================
-        # 4.1. Liczy średnie wartości wskaźników 'modern1' i 'modern2'
-        # =====================================================================
+    # 3. Tradycyjne, klasyczne wskaźniki dokładności
+    # =====================================================================
+    classic_acc = fn.acc_from_cross(cross, args)
+    # Calculation results are displayed by default: verbose = True
+    vb.verbose = True
+    vb(classic_acc, 'Accuracy metrics classically used in remote sensing:')
 
-        m1 = np.round(modern1.mean(), 4)
-        m2 = np.round(modern2.mean(), 4)
 
-        modern_mean = pd.DataFrame(pd.concat([m1, m2]))
-        modern_mean.columns = ["Value"]
+    # 4. Nowe wskaźniki dokładności
+    # =====================================================================
+    simple_acc, complex_acc = fn.acc_from_bin_cross(bin_cross, args)
+    vb(simple_acc, "Simple machine learning metrics:")
+    vb(complex_acc, "Complex machine learning metrics:")
 
-        vb(verbose=True, modern_mean=fn.df2list(modern_mean))
+    # average
+    m1 = np.round(simple_acc.mean(), 4)
+    m2 = np.round(complex_acc.mean(), 4)
 
-        # =====================================================================
-        # 5. Zapisywanie danych
-        # =====================================================================
-        names = ["cros", "binary_cros", "classic_acc", "modern1", "modern2"]
+    average_acc = pd.DataFrame(pd.concat([m1, m2]))
+    average_acc.columns = ["Value"]
+    vb(average_acc, "Average machine learning metrics:")
 
-        if args.save:
-            pths = [args.out_dir / f"{n}.csv" for n in names]
-            pths = [str(p) for p in pths]
-            args.out_dir.mkdir(exist_ok=True)
 
-            vb(verbose=True, zapis="""\tZapisywanie plików `csv`:\n""")
-            zapisano = []
+    # 5.Saving data to files:
+    #  - you can choose whether to save '*.csv' files or '*.zip' archives
+    #    to disk (you can't save both)
+    # =====================================================================
 
-            for i, nazwa in enumerate(names):
-                if nazwa == "cros":
-                    nazwa = "cros_full"
+    vb.verbose = True
+    data =  [("cross_full", cross_full),
+             ("binary_cross", bin_cross),
+             ("classic_acc", classic_acc),
+             ("simple_acc", simple_acc),
+             ("complex_acc", complex_acc),
+             ("average_acc", average_acc)]
+    df_dict = dict(data)
 
-                if nazwa == "binary_cros":
-                    nazwa = "binary_cros1"
+    if args.save and not args.zip:
+        recorded = fn.save_results(args.out_dir, df_dict)
 
-                data = locals()[nazwa]
-                ad = pths[i]
-                data.to_csv(ad, sep=args.sep)
-                zapisano.append(ad)
-            vb(verbose=True, zapisano=zapisano)
+        # Calculation results are displayed by default: verbose = True
+        vb(recorded, "Results saved to `csv` files:")
 
-        # tworzy raport html
-        if args.raport:
-            vb(verbose=args.verbose, raport="""\n\tTworzenie i zapis raportu:\n""")
+    elif args.zip and not args.save:
+        fn.zip_results(args.zip_path, df_dict)
+        
+        vb(args.zip_path, "Results saved to zip archive:")
 
-            # dane = [locals()[nazwa] for nazwa in names1]
-            dane = [cros_full, binary_cros1, classic_acc, modern1, modern2]
-            raport = AccRaport(data=dane, opis=names)
-            raport.saveRaport(raportAdres=args.raport)
 
-            vb(verbose=True, raport_zapisany=args.raport)
-        else:
-            msg1 = "\t Aby zapisać wyniki do plików csv użyj flagi `-s`."
-            msg2 = "\t Aby wygenerować raport html użyj flagi `-rap`."
-            vb(verbose=True, Save=msg1, Raport=msg2)
+    # 6. Creates html report
+    # =====================================================================
+    if args.report:
+        df_dict['bin_cross'] = bin_cross_rep
+
+        titles = fn.format_title(['Confusion matrix',
+                  'Binary confusion matrix',
+                  'Remote sensing: classical metrics to evaluate image \
+                          classification accuracy.',
+                  'Machine learning: `simple` metrics for assessing image \
+                          classification accuracy.',
+                  'Machine learning: `composite` metrics for assessing image \
+                          classification accuracy.',
+                  'Machine Learning: Metrics Averages'])
+
+        report_data = args.report_data.copy()
+        report_data.update({'script_name': args.script_name})
+        report =  AccuracyReport(**report_data)
+        # breakpoint()
+        data_dict = dict(zip(titles, df_dict.values()))
+        res = report(data_dict)
+        # breakpoint()
+        with open(args.report_data['report_file'], 'w') as f:
+            f.write(res)
+
+        vb(args.report_data['report_file'], "An html report was generated:")
 
 
 # ---
 
-
 if __name__ == "__main__":
     main()
-    wykaz = None
+
+

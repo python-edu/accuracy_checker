@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# import numpy as np
 import pandas as pd
-from acc_pack.src import cross_matrix
-from acc_pack.src import binary_acc
+from acc.src import cross_matrix
+from acc.src import binary_acc
 
 # ---
 

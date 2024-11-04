@@ -9,14 +9,14 @@ wersja = "w1.2020.08.13"
 opis = """
 Wersja skryptu: {0}.
 
-Moduł zawiera klasy dostarczające metody do oblicznia różnych wskźników
+Moduł zawiera klasy dostarczające metody do obliczania różnych wskaźników
 dokładności.
 
 Klasy:
-  ## 1. 'AccClasic'    - oblicza wskażniki 'klasyczne' na podstawie
+  ## 1. 'AccClasic'    - oblicza wskaźniki 'klasyczne' na podstawie
                          'cross matrix'
-  ## 2. 'AccClasicBin' - oblicza wskażniki 'klasyczne' na podstawie 'binTF'
-  ## 2. 'AccIndex'     - oblicza wskażniki z mchine learning na podstawie
+  ## 2. 'AccClasicBin' - oblicza wskaźniki 'klasyczne' na podstawie 'binTF'
+  ## 3. 'AccIndex'     - oblicza wskaźniki z machine learning na podstawie
                          'binTF'
 
 """.format(
@@ -307,14 +307,15 @@ class AccIndex:
     # Dane
 
     Dane wejściowe:   pd.DataFRame, tabela true/false w układzie:
-                      ----------------------------
-                      |    |owies| zyto| ... |
-                      | ---| --- | --- |---- |
+
+                      +----+-----+-----+-----+
+                      |    |owies| żyto| ... |
+                      +----+ --- + --- +---- +
                       | TP |  1  |  55 | ... |
                       | TN | 15  |  99 | ... |
                       | FP |  5  |   3 | ... |
                       | FN | 33  |  46 | ... |
-                      ----------------------------
+                      +----+-----+-----+-----+
 
 
     # Podział metryk

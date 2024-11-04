@@ -1,220 +1,220 @@
 # -*- coding: utf-8-*-
-"""
-Plik przeznaczony dla skryptu, który pobiera z Open Hub-a informacje o
-dostępnych obrazach ale nie pobiera obrazów!!!
 
-Zawiera funkce parsującą argumenty linii poleceń.
 """
-
+"""
 import argparse
-import textwrap
-from pathlib import Path
-
-# my modules import
-from simpleutils.src import argspk as apk
 
 # local imports
-
+from acc.src.args_data.from_raw import add_subparser as add_raw_subparser
+from acc.src.args_data.from_cross import add_subparser as add_cross_subparser
+from acc.src.args_data.from_bin import add_subparser as add_bin_subparser
+from acc.src.args_data.from_imgs import add_subparser as add_imgs_subparser
+from acc.src.args_data.args_func import FormatHelp as FH
+from acc.src.args_data import args_func as afn
+from acc.src.subcommands import from_raw, from_cross, from_bin, from_imgs
 
 # --
 
-
-description = """
-Skrypt sprawdza jakość klasyfikacji:
-   - tworzy lub wykorzystuje istniejącą cross matrix
-   - oblicza metryki dokładności."""
-
-info = """
-Metryki proste:
-   - acc:  accuracy
-   - ppv:  precision or positive predictive value
-   - tpr:  sensitivity, recall, hit rate, true positive rate
-   - tnr:  specificity, selectivity or true negative rate
-   - npv:  negative predictive value
-   - fnr:  miss rate or false negative rate
-   - fpr:  fall-out or false positive rate
-   - fdr:  false discovery rate
-   - foRate: false omission rate
-   - ts:  Threat score (TS) or critical success index (CSI)
-   - mcc: Matthews correlation coefficient, od -1 do 1
+description = FH(
+    """The script checks the quality of classification:
+        - creates or uses an existing cross matrix
+        - calculates accuracy metrics."""
+).txt
 
 
-Metryki złozone:
-   - pt:  prevalence threshold
-   - ba:  balanced accuracy
-   - f1:  harmonic mean of precision and sensitivity
-   - fm:  Fowlkes–Mallows index
-   - bm:  Fowlkes–Mallows index
-   - mk:  markedness or deltaP
+info = FH(
+        """1. The definitions of the metrics are mainly based on the binary \
+        error matrix with the following symbols: TP true positive, TN true \
+        negative, FP false positive, FN false negative.
+
+2. Accuracy metrics classically used in remote sensing:
+  - OA (overall_accuracy):
+   -- OA = sum(TP) / (TP + TN + FP + FN)
+
+  -  PA (producer_accuracy):
+   -- PA = TP / (TP + FN)
+
+  -  UA (user_accuracy)
+     -- UA = TP / (TP + FP)
+
+  -  OME (omission errors / errors_of_omission):
+     -- OME = FN / (TP + FN)
+
+  -  CME (errors_of_commision):
+     -- CME = FP / (TP + FP)
+
+  -  NPV (negative predictive value):
+     -- NPV = TN/(TN + FN) = 1 − FOR
+
+3. Classification accuracy metrics found in contemporary scientific \
+publications (some metrics overlap with some of the metrics mentioned in \
+point 1).
+
+These metrics can be conventionally divided into simple metrics \
+(calculated directly from the TP, TN, FP and FN values) and complex metrics \
+(calculated using simple metrics).
+
+3.1. Simple metrics:
+
+   -   ACC (accuracy):
+      -- ACC = (TP+TN)/(P+N) = (TP+TN)/(TP+TN+FP+FN)
+
+   -  PPV (precision or positive predictive value):
+      -- PPV = TP / (TP + FP)
+
+   -  PPV (precision or positive predictive):
+      -- PPV = TP / (TP + FP)
+
+   -  TPR (sensitivity, recall, hit rate, or true positive rate):
+      -- TPR = TP/P = TP/(TP + FN) = 1 − FNR
+
+   -  TNR (specificity, selectivity or true negative rate):
+      -- TNR = TN/N = TN/(TN + FP) = 1 − FPR
+
+   -  NPV (negative predictive value):
+      -- NPV = TN/(TN + FN) = 1 − FOR
+
+   -  FNR (miss rate or false negative rate):
+      -- FNR = FN/P = FN/(FN + TP) = 1 − TPR
+
+   -  FPR (fall-out or false positive rate):
+      -- FPR = FP/N = FP/(FP + TN) = 1 − TNR
+
+   -  FDR (false discovery rate):
+      -- FDR = FP/(FP + TP) = 1 − PPV
+
+   -  FOR (false omission rate):
+      -- FOR = FN/(FN + TN) = 1 − NPV
+
+   -  TS / CSI (Threat score (TS) or critical success index (CSI)):
+      -- TS = TP/(TP + FN + FP
+
+   -  MCC (Matthews correlation coefficient):
+      -- mcc = (TP*TN - FP*FN) / [(TP+FP) * (TP+FN) * (TN+FP) * (TN+FN)]^0.5
+
+3.2. Complex metrics:
+   - PT (Prevalence Threshold):
+     -- PT = {[TPR*(1 − TNR)]^0.5 + TNR − 1} / (TPR + TNR − 1)
+
+   - BA (Balanced accuracy):
+     -- ba = (TPR + TNR)/2
+
+   - F1 score (is the harmonic mean of precision and sensitivity):
+     -- f1 = 2*(PPV*TPR)/(PPV+TPR) = (2*TP)/(2*TP+FP+FN)
+
+   - FM (Fowlkes–Mallows index):
+     -- fm = [(TP/(TP+FP))*(TP/(TP+FN))]^0.5 = (PPV * TPR)^0.5
+
+   - BM (informedness or Fowlkes–Mallows index):
+     -- bm = TPR + TNR - 1
+
+   - MK (markedness (MK) or deltaP):
+     -- mk = PPV + NPV - 1
 """
-
-
-def mapa_args():
-    k1 = ['input',]
-    v1 = ['input']
-
-    k2 = ['data_type', 'precision', 'revers', 'sep', 'sums']
-    v2 = ['-d', '-p', '-r', '-sp', '-ss']
-
-    k3 = ['out_dir', 'save', 'raport', 'ref', 'full_save']
-    v3 = ['-o', '-s', '-rap', '-rf', '-f']
-
-    keys = [*k1, *k2, *k3]
-    vals = [*v1, *v2, *v3]
-    return dict(zip(keys, vals))
-# --
-
-
-apk.mapa = mapa_args()
-
+).txt
 # --
 
 
 def parsuj_argumenty():
-    '''
-    '''
+    # parser = apk.MyParserWithDefaults(
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
+        description=description,
+        fromfile_prefix_chars="@",
+    )
+    # --- argumenty głównego parsera ------------------------------------------
 
-    parser = apk.MyParserWithDefaults(
-            formatter_class=apk.MyHelpFormatter,
-            description=description,
-            fromfile_prefix_chars='@',
-            )
-
-    parser.convert_arg_line_to_args = apk.convert_arg_line
-
-    txt = '''\
-    Adres pliku 'csv' z danymi. Dany mogą być:
-      1. Surowe dane - przynajmniej dwie kolumny:
-         -------------------------
-         |    true   | predicted |
-         | --------- | --------- |
-         |        1  |     2     |
-         |        5  |     3     |
-         -------------------------
-
-         lub
-
-         ------------------------------------
-         | etykieta |    true   | predicted |
-         | -------- | --------- | --------- |
-         |  trawa   |        1  |     2     |
-         |   woda   |        5  |     3     |
-         ------------------------------------
-
-         gdzie:
-           - 'predicted' - wynik klasyfikacji, np. 5
-           - 'true'      - prawdziwa etykieta klasy np. 7.
-
-      2. Cross matrix - gotowa tabela z opisami kolumn/wierszy i sumami.
-      3. binTF - tabela TP, TN, FP, FN.'''
-    parser.add_argument('input', type=str, help=textwrap.dedent(txt))
-
-    # ---
-
-    txt = '''\
-        Mówi czym są dane wejściowe. Możliwości:
-          - 'data' - 2 lub 3 kolumny w pliku csv
-          - 'cros_raw' - cros matrix bez opisów wierszy i kolumn - same liczby
-          - 'cros' - cros matrix z opisami wierszy i kolumn, bez sum
-          - 'cros_full' - cros matrix z opisami kolumn i wierszy i z sumami
-            wierszy i kolumn
-          - 'bin' binTF.'''
-    parser.add_argument('-d', '--data_type', type=str,
-                        help=textwrap.dedent(txt), default='data')
-    # -------------------------------------------------------------------------
-
-    txt = '''Wyświetla informacje o obliczanych statystykach.'''
-    parser.add_argument('-i', '--info', help=txt, action='store_true')
-
-    # -------------------------------------------------------------------------
-
-    txt = '''Dokładność - liczba miejsca po przecinku.'''
-    parser.add_argument('-p', '--precision', type=int, help=txt, default=4)
-
-    txt = 'Gdy cross matrix to dane wejściowe, to flaga wskazuje, że układ' \
-        ' cross matrix jest odwrócony tzn. w kolumnach' \
-        ' są dane referencyjne (true) a w wierszach są wyniki klasyfikacji' \
-        ' obrazu (predict).'
-    parser.add_argument('-r', '--revers', action='store_true', help=txt)
-
-    txt = 'Dotyczy danych typu `crossmatrix`: zaznacz jeśli dane zawierają ' \
-        ' podsumowaie wierszy i kolumn.'
-    parser.add_argument('-ss', '--sums', action='store_true', help=txt)
-
-    # -------------------------------------------------------------------------
-
-    txt = "Określa separator kolumn pliku csv."
-    parser.add_argument('-sp', '--sep', type=str, help=txt, default=';')
-
-    txt = "Str, nazwa katalogu do zapisu danych." \
-          " Katalog tworzony jest w katalogu roboczym, czyli nadrzędnym" \
-          " do katalogu z danymi wejściowymi."
-    parser.add_argument('-o', '--out_dir', type=str,
-                        help=txt, default='results')
-
-    txt = '''Domyślnie skrypt wyświetla wyniki na ekranie. Ta opcja powoduje,
-    zapisanie wyników do osobnych plików csv:
-      - cros.csv,
-      - binary_cros.csv,
+    txt = FH(
+        """By default, the script displays the results on the screen. This
+        option saves the results to separate csv files:
+      - average_acc.csv
+      - binary_cross.csv,
       - classic_acc.csv,
-      - modern1.csv, modern2.csv.
-               '''
-    parser.add_argument('-s', '--save', help=txt, action='store_true')
+      - complex_acc.csv
+      - cross_full.csv,
+      - simple_acc.csv."""
+    ).txt
+    parser.add_argument("-s", "--save", help=txt, action="store_true")
 
-    txt = '''Generuje raport w html: wszystkie tabele w jednym pliku html:
-    - raport.html.
-    '''
-    parser.add_argument('-rap', '--raport', help=txt, action='store_true')
+    txt = FH("""Name or full path to the directory where the results will be
+    saved. Name can be a subpath, e.g. `folder/folder/name`. If the directory
+    does not exist it will be created. Only works with the `--save` and/or
+    '--report' option.
+    By default it creates a new directory inside the directory with the data
+    file. The name of the new directory is the name of the data file
+    with the 'results' extension, e.g.:
+    - cross_full.csv -> cross_full_results.
+    """).txt
+    parser.add_argument("-o", "--out_dir", type=str, help=txt)
 
-    # -------------------------------------------------------------------------
+    txt = FH(
+        """Generates a report in html: all tables in one html file:
+    - raport.html."""
+    ).txt
+    parser.add_argument("-r", "--report", help=txt, action="store_true")
 
-    txt = '''Adres pliku 'csv' z danymi referencyjnymi - 2 kolumny:
-    - 'label;name'.
-        '''
-    parser.add_argument('-rf', '--ref', type=str, help=txt, default=None)
+    txt = FH(
+        """Data for creating a report is given in the form key=value. Works \
+        only with the argument `-r / --report`!!. Default values:
+        - title='Image Classification Accuracy Assessment'
+        - description='Research project.'
+        """).txt
+    default = ["title=Image Classification Accuracy Assessment",
+               'description=Research project.',
+               'report_file=report.html', 'template_file=report_template.html',
+               'template_dir=templates']
+    parser.add_argument("--report_data", help=txt, nargs='+', type=list,
+                        default=default)
 
-    txt = "Wskazuje, że wynikiem skryptyu ma być tylko raport.html. " \
-        "Domyślnie oprócz raportu generuje również pliki csv."
-    parser.add_argument('-f', '--full_save', help=txt, action='store_true')
+    txt = FH("""Displays information (names and calculation formulas) about \
+            the calculated statistics.""").txt
+    parser.add_argument("-i", "--info", help=txt,
+                        action="store_true", default=False)
 
-    # -------------------------------------------------------------------------
+    txt = "Precision - number of decimal places."
+    parser.add_argument("-p", "--precision", type=int, help=txt, default=4)
 
-    txt = "Wyświetla bardziej szczegółowe informacje."
-    parser.add_argument('-v', '--verbose', help=txt, action='store_true')
+    txt = FH("""Use the option to pack the resulting '.csv' files into a zip
+    archive.""").txt
+    parser.add_argument("-z", "--zip", action="store_true", help=txt)
 
-    args = parser.parse_args()
+    txt = FH("""Enter the file name (without extension) if you want to
+    change the default name. The default name is the input file
+    name + 'results.zip' suffix, e.g.:
+    - cross.csv -> cross_results.zip.""").txt
+    parser.add_argument("--zip_name", type=str, help=txt)
 
-    return args
-# --
+    txt = FH("Column separator in '*.csv' file (usually ','). Enter it \
+            manually if auto-detection doesn't work.").txt
+    parser.add_argument("--sep", type=str, help=txt)
 
+    txt = "Displays additional information while the script is running."
+    parser.add_argument("-v", "--verbose", action="store_true", help=txt)
 
-def validuj_args(args):
-    '''Funkcja przetwarza argumenty wejściowe skryptu'''
-    # nazwy katalogów i plików wyjściowych
+    # --- podkomendy (subparsers) ---------------------------------------------
+    # common args for all subcommands
+    args = [
+        {"dest": "path",
+         'type': afn.check_file_path,
+         "help": "Path to the input data file ('*.csv')."},
+    ]
 
-    if not args.info:
-        if args.input:
-            if Path(args.input).expanduser().is_absolute():
-                args.input = Path(args.input).expanduser()
-            else:
-                args.input = Path(args.input).resolve()
+    # Subparsery dla podkomend
+    subparsers = parser.add_subparsers(
+        title="Subcommands", dest="subcommand", help="Available subcommands"
+    )
 
-            args.work_dir = str(args.input.parent)
-            args.input = str(args.input)
+    # Dodanie podkomendy `from_raw`
+    from_raw_subparser = add_raw_subparser(subparsers, args)
+    from_raw_subparser.set_defaults(func=from_raw)
 
-        if args.raport or args.save:
-            args.out_dir = Path(args.work_dir) / args.out_dir
+    from_cross_subparser = add_cross_subparser(subparsers, args)
+    from_cross_subparser.set_defaults(func=from_cross)
 
-            name = Path(args.input).name.split('.')[0]
-            name = f'{name}_raport.html'
-            args.raport = str(args.out_dir / name)
-            args.out_dir = str(args.out_dir)
+    from_bin_subparser = add_bin_subparser(subparsers, args)
+    from_bin_subparser.set_defaults(func=from_bin)
 
-        if args.ref is not None:
-            args.ref = str(Path(args.ref).resolve())
+    from_imgs_subparser = add_imgs_subparser(subparsers, args)
+    from_imgs_subparser.set_defaults(func=from_imgs)
 
-    return args
-# --
-
-
-# --
+    return parser
