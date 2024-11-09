@@ -5,13 +5,10 @@
 import argparse
 
 # local imports
-from acc.src.args_data.from_raw import add_subparser as add_raw_subparser
-from acc.src.args_data.from_cross import add_subparser as add_cross_subparser
-from acc.src.args_data.from_bin import add_subparser as add_bin_subparser
-from acc.src.args_data.from_imgs import add_subparser as add_imgs_subparser
 from acc.src.args_data.args_func import FormatHelp as FH
 from acc.src.args_data import args_func as afn
-from acc.src.subcommands import from_raw, from_cross, from_bin, from_imgs
+from acc.src.subcommands import from_raw, from_cross_full, from_cross
+from acc.src.subcommands import from_cross_raw, from_binary, from_imgs
 
 # --
 
@@ -123,6 +120,14 @@ def parsuj_argumenty():
         fromfile_prefix_chars="@",
     )
     # --- argumenty głównego parsera ------------------------------------------
+    txt = FH("""Path to data file: '*.csv' or images. If images then:
+             - the first one is the reference (true values)
+             - the second one is the classification result
+             (predicted values).""").txt
+    parser.add_argument('path', nargs='+', type=str, help=txt) 
+
+    # txt = FH("Path to data file: '*.csv' or image").txt
+    # parser.add_argument('-p2', '---path2', type=str, help=txt) 
 
     txt = FH(
         """By default, the script displays the results on the screen. This
@@ -188,33 +193,15 @@ def parsuj_argumenty():
             manually if auto-detection doesn't work.").txt
     parser.add_argument("--sep", type=str, help=txt)
 
+    txt = FH("""Use the switch when the input data is in a different
+    layout than the default, i.e.:
+    - when in the cross matrix the columns are `predicted` values instead \
+      of `true`
+    - when the binary cross has a vertical layout instead of a horizontal \
+    one.""").txt
+    parser.add_argument("--reversed", action="store_true", help=txt)
+
     txt = "Displays additional information while the script is running."
     parser.add_argument("-v", "--verbose", action="store_true", help=txt)
-
-    # --- podkomendy (subparsers) ---------------------------------------------
-    # common args for all subcommands
-    args = [
-        {"dest": "path",
-         'type': afn.check_file_path,
-         "help": "Path to the input data file ('*.csv')."},
-    ]
-
-    # Subparsery dla podkomend
-    subparsers = parser.add_subparsers(
-        title="Subcommands", dest="subcommand", help="Available subcommands"
-    )
-
-    # Dodanie podkomendy `from_raw`
-    from_raw_subparser = add_raw_subparser(subparsers, args)
-    from_raw_subparser.set_defaults(func=from_raw)
-
-    from_cross_subparser = add_cross_subparser(subparsers, args)
-    from_cross_subparser.set_defaults(func=from_cross)
-
-    from_bin_subparser = add_bin_subparser(subparsers, args)
-    from_bin_subparser.set_defaults(func=from_bin)
-
-    from_imgs_subparser = add_imgs_subparser(subparsers, args)
-    from_imgs_subparser.set_defaults(func=from_imgs)
 
     return parser

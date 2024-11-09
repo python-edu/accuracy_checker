@@ -86,11 +86,11 @@ def acc_from_cross(data, args):
                - binary cross matrix (bin_cross)
       - args:  obiekt z atrybutami, zwykle namespase z argparse
     """
-    if args.data_type in ["data", "cross", "raw", "full"]:
-        acc = metrics.AccClasic(data, args.precision)
-
-    else:
+    #if args.data_type in ["data", "cross", "raw", "full"]:
+    if args.data_type == 'binary':
         acc = metrics.AccClasicBin(data, args.precision)
+    else:
+        acc = metrics.AccClasic(data, args.precision)
 
     classic_acc = acc.tabela
 
@@ -162,9 +162,7 @@ def save_results(out_dir: str, df_dict: dict) -> list[str]:
           'name_df' is the name of the data table and the file name (after
           adding the 'csv' extension)
     """
-
     recorded = []
-
     for name, df in df_dict.items():
         name = f"{name}.csv"
         out_path = str(Path(out_dir) / name)
@@ -308,16 +306,20 @@ class Verbose:
             args_dict = vars(args)
         else:
             args_dict = args.copy()
-
+        
         # --- setup keys order
-        keys_order = ["subcommand", "path"]
+        if hasattr(args, 'path2'):
+            keys_order = ["path", "path2"]
+        else:
+            keys_order = ["path"]
 
         # if args.get('save', False):
-        if args.save:
+        if hasattr(args, 'save'):
             keys_order.extend(["save", "out_dir", "out_files"])
 
         # if args.get('report', False):
-        if args.report:
+        # if args.report:
+        if hasattr(args, 'report'):
             keys_order.extend(["report", "report_data"])
 
         # --- change key to string key
@@ -335,21 +337,25 @@ class Verbose:
         res = []
         for key in keys_order:
             line = args_dict[key]
-            if key == "report_data" and args.report:
-                line = self._format_subargs(line)
-                # line = '\n'.join(line)
+            # if key == "report_data" and args.report:
+            #     line = self._format_subargs(line)
+            #     # line = '\n'.join(line)
 
-            elif key == "save" and args.save:
-                line = {
-                    "out_dir": args_dict.get("out_dir"),
-                    "out_files": args_dict.get("out_files"),
-                }
-                line = self._format_subargs(line)
+            # elif key == "save" and args.save:
+            #     line = {
+            #         "out_dir": args_dict.get("out_dir"),
+            #         "out_files": args_dict.get("out_files"),
+            #     }
+            #     line = self._format_subargs(line)
 
-            else:
-                line = self._format_line(
-                    line, **{"width": 90, "subsequent_indent": 3 * " "}
-                )
+            # else:
+            #     line = self._format_line(
+            #         line, **{"width": 110, "subsequent_indent": 3 * " "}
+            #     )
+            # res.append(f"{key: >13}:   {line}")
+            line = self._format_line(
+                line, **{"width": 110, "subsequent_indent": 3 * " "}
+            )
             res.append(f"{key: >13}:   {line}")
         return "\n".join(res)
 

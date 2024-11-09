@@ -88,7 +88,7 @@ class AccClasic:
             self.data = self._get_data(self.data)
         else:
             self.data = self._get_data(data)
-
+        # breakpoint()
         # oblicz podstawowe wartości sum: w wierszach, kolumnach, całkowitą
         self._oblicz_sumy()
 
@@ -119,7 +119,7 @@ class AccClasic:
     # ---
 
     def _obliczIndeksy(self):
-        self.OA = self.overall_accuracy()
+        self.OA = self._overall_accuracy()
         self.PA = self._producer_accuracy()
         self.UA = self._user_accuracy()
 
@@ -131,7 +131,7 @@ class AccClasic:
 
     # ---
 
-    def overall_accuracy(self):
+    def _overall_accuracy(self):
         all_good = self._diagonalne.sum()
         return np.round(all_good / self._total, self.precision)
 
@@ -218,6 +218,7 @@ class AccClasicBin(AccClasic):
                 CME = FP / (TP + FP)
 
     """
+    # ---
 
     def _get_data(self, data):
         return data.copy()

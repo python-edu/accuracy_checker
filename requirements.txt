@@ -5,4 +5,8 @@ flake8
 numpy
 pandas
 jinja2
-/home/u1/03_Programowanie/03Python/00Moduly/simple_utils/dist/simpleutils-0.4.0-py3-none-any.whl
+shapely
+fiona
+pyproj
+rtree
+rasterio

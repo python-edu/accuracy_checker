@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from acc.src.args import parsuj_argumenty, info
+from acc.src import data_recognition
 from acc.src import functions as fn
 from acc.src.args_data import args_func as afn
 from acc.src.report import AccuracyReport
@@ -16,6 +17,9 @@ def main():
     args = parser.parse_args()
     args = afn.args_validation(args,
                                **{'script_name': __file__, 'info': info})
+
+    # --- scans data and checks data type ---
+    args = data_recognition.specify_data_type(args)
 
     vb = fn.Verbose(args.verbose)
     vb(args, "Script arguments:", args_data=True)
@@ -35,7 +39,8 @@ def main():
 
     # 3. Tradycyjne, klasyczne wskaźniki dokładności
     # =====================================================================
-    classic_acc = fn.acc_from_cross(cross, args)
+    classic_acc = fn.acc_from_cross(data, args)
+
     # Calculation results are displayed by default: verbose = True
     vb.verbose = True
     vb(classic_acc, 'Accuracy metrics classically used in remote sensing:')
@@ -69,14 +74,17 @@ def main():
              ("complex_acc", complex_acc),
              ("average_acc", average_acc)]
     df_dict = dict(data)
-
-    if args.save and not args.zip:
+    df_dict = {key: val for key, val in df_dict.items() if val is not None}
+    
+    # if args.save and not args.zip:
+    if hasattr(args, 'save') and not hasattr(args, 'zip'):
         recorded = fn.save_results(args.out_dir, df_dict)
 
         # Calculation results are displayed by default: verbose = True
         vb(recorded, "Results saved to `csv` files:")
 
-    elif args.zip and not args.save:
+    # elif args.zip and not args.save:
+    elif hasattr(args, 'zip') and not hasattr(args, 'save'):
         fn.zip_results(args.zip_path, df_dict)
         
         vb(args.zip_path, "Results saved to zip archive:")
@@ -84,7 +92,8 @@ def main():
 
     # 6. Creates html report
     # =====================================================================
-    if args.report:
+    # if args.report:
+    if hasattr(args, 'report'):
         df_dict['bin_cross'] = bin_cross_rep
 
         titles = fn.format_title(['Confusion matrix',
