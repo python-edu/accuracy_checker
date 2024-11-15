@@ -2,6 +2,8 @@ wheel
 setuptools
 build
 flake8
+black
+ipython
 numpy
 pandas
 jinja2
@@ -10,3 +12,4 @@ fiona
 pyproj
 rtree
 rasterio
+geopandas

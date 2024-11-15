@@ -308,18 +308,21 @@ class Verbose:
             args_dict = args.copy()
         
         # --- setup keys order
+        keys_order = ["path", "data_type", "func"]
+
         if hasattr(args, 'path2'):
-            keys_order = ["path", "path2"]
-        else:
-            keys_order = ["path"]
+            keys_order.insert(1, 'path2')
+
+        if hasattr(args, 'path3'):
+            keys_order.insert(2, 'path3')
 
         # if args.get('save', False):
-        if hasattr(args, 'save'):
+        if hasattr(args, 'save') and args.save:
             keys_order.extend(["save", "out_dir", "out_files"])
 
         # if args.get('report', False):
         # if args.report:
-        if hasattr(args, 'report'):
+        if hasattr(args, 'report') and args.report:
             keys_order.extend(["report", "report_data"])
 
         # --- change key to string key

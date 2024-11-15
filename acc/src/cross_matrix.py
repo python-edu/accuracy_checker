@@ -152,7 +152,6 @@ class CrossMatrixValidation:
     # --- ---
 
     def _make_labels_and_map(self):
-
         """If the input was just numbers (list of lists, e.g. array):
             - creates verbal descriptions of rows/columns based on the label,
               e.g. cl_1, cl_2
@@ -404,7 +403,7 @@ class ConfusionMatrix:
              gdzie labels to nazwy klas np. owies, przenica, woda, ...
     """
 
-    def __init__(self, data=None, etykieta="cl", scheme="normal"):
+    def __init__(self, data=None, map_labels=None, etykieta="cl", scheme="normal"):
         """
         # Args:
           - data: 2 lub 3 kolumny w układzie:
@@ -417,6 +416,7 @@ class ConfusionMatrix:
 
             Etykiety klas to słowne nazwy np. rzepak, woda, etc.
 
+          - labels: dict {nr: name, ...} np. {1: pszenica, 2: zyto, ...}
           - etykieta:   str, jeśli nie ma nazw klas są tylko liczby 1,2,...
             to w nazwach kolumn i wierszy dodana będzie etykieta np.:
             klasy 1, 2, 3 --> 'cl_1', 'cl_2', 'cl_3'.
@@ -428,8 +428,8 @@ class ConfusionMatrix:
         self._data = copy.deepcopy(data)
         self.etykieta = etykieta
         self.scheme = scheme
-
         self._labels = None
+        self.map_labels = map_labels.copy() if map_labels else map_labels
         self.true_values = None
         self.predicted = None
 
@@ -440,13 +440,14 @@ class ConfusionMatrix:
 
         if data is not None:
             self.__call__()
-
     # --- ---
 
     def __call__(self):
-        self._labels, self.true_values, self.predicted = self._prepare_data()
+        # breakpoint()
+        self.map_labels, self._labels, self.true_values, self.predicted \
+                = self._prepare_data()
         cross_raw = self._cross_raw_from_data()
-
+        breakpoint()
         kwargs = {"_labels": self._labels}
         waliduj = CrossMatrixValidation(cross_raw,
                                         state="raw",
@@ -466,19 +467,25 @@ class ConfusionMatrix:
         być 3 kolumna z ze słownymi etykietami klas np. woda, las, ...
 
         Args:
-            - data: lista list, pd.DataFrame lub np.array. Dane to 2 lub 3
+            - data: lista list np. ([[true_values, ...], [predicted, ...]],
+              pd.DataFrame lub np.array. Dane to 2 lub 3
               kolumny:
               -- 2 kolumny: true_values, predicted
               -- 3 kolumny: labels, true_values, predicted
         """
         data = self.data
+        
         if isinstance(data, list) or isinstance(data, tuple):
             data = np.array(data).T
         else:
             data = np.array(data)
-
-        if data.shape[1] == 2:
-            labels = None
+        # breakpoint()
+        if data.shape[1] == 2 and self.map_labels is None:
+            cl = self.etykieta
+            map1 = [(int(val), f'{cl}_{val}') for val in np.unique(data[:, 0])]
+            map2 = [(int(val), f'{cl}_{val}') for val in np.unique(data[:, 1])]
+            map_labels = dict(set(map1).union(map2))
+            labels = [map_labels[key] for key in data[:, 0]]
         elif data.shape[1] == 3:
             # 2 pierwsze kolumny: labels, true_values
             # od pythona 3.7 dict -> unikalne wiersze z np.array
@@ -488,7 +495,7 @@ class ConfusionMatrix:
         true_values = data[:, -2].astype("int")
         predicted = data[:, -1].astype("int")
 
-        return labels, true_values, predicted
+        return map_labels, labels, true_values, predicted
 
     # --- ---
 
@@ -496,6 +503,7 @@ class ConfusionMatrix:
         cros = pd.crosstab(
             self.true_values,
             self.predicted,
+            dropna=False,
         )
         return cros.to_numpy()
 

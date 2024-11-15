@@ -124,6 +124,18 @@ def parsuj_argumenty():
              - the first one is the reference (true values)
              - the second one is the classification result
              (predicted values).""").txt
+    txt = FH("""Paths to data files. You can specify from one to 3 paths
+    separated by a space, according to the scheme:
+    - path.csv: one path - data saved in the '*.csv' file
+    - path.tif: one path - image after classification (it will automatically \
+      search for a file with reference data `path_ref.tif`)
+    - path.shp path.tif: 2 paths, the first is the reference data (image or \
+      vector) and the second is the image after classification
+    - path.tif path.json: 2 paths, the first is the image after \
+      classification, the second are the names of classes in json format \
+      ({'1': ''wheat', ...}); it will automatically search for the file \
+      `path_ref.tif` (references)
+    - path.shp path.tif path.json: three paths""").txt
     parser.add_argument('path', nargs='+', type=str, help=txt) 
 
     # txt = FH("Path to data file: '*.csv' or image").txt

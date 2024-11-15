@@ -112,15 +112,44 @@ def is_binary_matrix(df: pd.DataFrame) -> Tuple[bool, dict]:
 
 
 def is_imgs(args):
-    meta = {'func': from_imgs}
+    """Są 2 przypadki:
+    1. args.path to jedna ścieżka do obrazu ('tif', 'tiff', ...) oznacza, żę
+       wskazuje na wynik klasyfikacji. Wtedy w tym samym katalogu musi znajdować
+       się plik z referencją, o takiej samej nazwie tylko z końcówką `ref` np.:
+       - `cracow.tif` -> `cracow_ref.tif` lub `cracow_ref.shp` lub
+         `cracow_ref.gpkg`  
+    2. args.path to 2 ścieżki, wtedy pierwsza to referencja a druga to wynik
+    klasyfikacji.
 
-    if args.path:
-        suffix = Path(args.path).suffix[1:]
-        if suffix in ['tif', 'tiff', 'TIF', 'TIFF', 'shp', 'gpkg']:
-            return True, meta
+    """
+    meta = {'func': from_imgs, 'data_type': 'imgs'}
+    suffix = Path(args.path).suffix[1:]
+    if suffix in ['tif', 'tiff', 'TIF', 'TIFF', 'shp', 'gpkg']:
+        return True, meta
     return False, None
 # ---
         
+
+def remove_unnecessary_args(args): 
+    if not args.save:
+        delattr(args, 'save')
+
+    if not args.zip:
+        delattr(args, 'zip')
+        delattr(args, 'zip_name')
+
+    if not args.report:
+        delattr(args, 'report')
+
+    if args.data_type == 'imgs':
+        delattr(args, 'sep')
+
+    if not args.reversed:
+        delattr(args, 'reversed')
+
+    return args
+# ---
+
 
 def specify_data_type(args):
     """The function determines what type of data `args.path` points to. The
@@ -160,3 +189,10 @@ def specify_data_type(args):
             update_args(args, meta)
             return args
 # ---
+
+
+def recognize_data_type(args):
+    """Main function to recognize data."""
+    args = specify_data_type(args)
+    args = remove_unnecessary_args(args)
+    return args

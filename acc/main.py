@@ -19,8 +19,7 @@ def main():
                                **{'script_name': __file__, 'info': info})
 
     # --- scans data and checks data type ---
-    args = data_recognition.specify_data_type(args)
-
+    args = data_recognition.recognize_data_type(args)
     vb = fn.Verbose(args.verbose)
     vb(args, "Script arguments:", args_data=True)
 
