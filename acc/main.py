@@ -32,13 +32,17 @@ def main():
         print(args)
         sys.exit()
 
-    data, cross, cross_full, bin_cross, bin_cross_rep = read_data(args)
-    vb(bin_cross, 'Binary confusion matrix:')
+    # data, cross, cross_full, bin_cross, bin_cross_rep = read_data(args)
+    cross_obj, binary_obj = read_data(args)
+    vb(binary_obj.binary_cross, 'Binary confusion matrix:')
 
 
     # 3. Tradycyjne, klasyczne wskaźniki dokładności
     # =====================================================================
-    classic_acc = fn.acc_from_cross(data, args)
+    if cross_obj.cross_sq is not None:
+        classic_acc = fn.acc_from_cross(cross_obj.cross_sq, args)
+    else:
+        classic_acc = fn.acc_from_cross(binary_obj.binary_cross, args)
 
     # Calculation results are displayed by default: verbose = True
     vb.verbose = True
@@ -47,7 +51,9 @@ def main():
 
     # 4. Nowe wskaźniki dokładności
     # =====================================================================
-    simple_acc, complex_acc = fn.acc_from_bin_cross(bin_cross, args)
+    simple_acc, complex_acc = fn.acc_from_bin_cross(binary_obj.binary_cross,
+                                                    args
+                                                    )
     vb(simple_acc, "Simple machine learning metrics:")
     vb(complex_acc, "Complex machine learning metrics:")
 
@@ -66,8 +72,8 @@ def main():
     # =====================================================================
 
     vb.verbose = True
-    data =  [("cross_full", cross_full),
-             ("binary_cross", bin_cross),
+    data =  [("cross_full", cross_obj.cross_full),
+             ("binary_cross", binary_obj.binary_cross),
              ("classic_acc", classic_acc),
              ("simple_acc", simple_acc),
              ("complex_acc", complex_acc),

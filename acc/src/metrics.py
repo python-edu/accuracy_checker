@@ -31,11 +31,12 @@ class AccClasic:
     """\
     # Dane
 
-       predicted  | water  forest  urban
-       referencje |______________________
-       water      |   21       5      7
-       forest     |    6      31      2
-       urban      |    0       1     22
+        predicted |                     
+          true    | water | forest | urban
+       -----------+-------+--------+-------
+        water     |   21  |    5   |   7
+        forest    |    6  |   31   |   2
+        urban     |    0  |    1   |  22
 
        - wartości referencyjne w wierszach
        - wartości `predicted` w kolumnach
@@ -80,20 +81,16 @@ class AccClasic:
                     * kolumny to prawda
                     * wiersze to predicted
         """
-        # liczba miejsc po przecinku dla wyników
         self.precision = precision
 
         if revers:
-            self.data = self._reverseData(data)
+            self.data = self._reverse_data(data)
             self.data = self._get_data(self.data)
         else:
             self.data = self._get_data(data)
         # breakpoint()
-        # oblicz podstawowe wartości sum: w wierszach, kolumnach, całkowitą
-        self._oblicz_sumy()
-
-        # oblicz wskaźniki/indeksy dokładności
-        self._obliczIndeksy()
+        self._calculate_sums()
+        self._calculate_accuracy_metrics()
 
     # ---
 
@@ -105,12 +102,12 @@ class AccClasic:
             data = data.to_numpy()
         return data
 
-    def _reverseData(self):
+    def _reverse_data(self):
         return self.data.T
 
     # ---
 
-    def _oblicz_sumy(self):
+    def _calculate_sums(self):
         self._total = self.data.sum()
         self._rows_sum = self.data.sum(axis=1)  # sumy w wierszach
         self._cols_sum = self.data.sum(axis=0)
@@ -118,7 +115,7 @@ class AccClasic:
 
     # ---
 
-    def _obliczIndeksy(self):
+    def _calculate_accuracy_metrics(self):
         self.OA = self._overall_accuracy()
         self.PA = self._producer_accuracy()
         self.UA = self._user_accuracy()
@@ -126,8 +123,8 @@ class AccClasic:
         self.OME = self._errors_of_omission()
         self.CME = self._errors_of_commision()
 
-        self.tabela = self._zestawienie()
-        self.tabela = self._roundTable()
+        self.tabela = self._table_results()
+        self.tabela = self._round_table()
 
     # ---
 
@@ -135,23 +132,43 @@ class AccClasic:
         all_good = self._diagonalne.sum()
         return np.round(all_good / self._total, self.precision)
 
-    def _errors_of_omission(self):
+    def _errors_of_omission_old(self):
         diff = self._rows_sum - self._diagonalne
         return np.round(diff / self._rows_sum, self.precision)
+
+    def _errors_of_omission(self):
+        diff = self._rows_sum - self._diagonalne
+        with np.errstate(divide='ignore', invalid='ignore'):
+            result = np.true_divide(diff, self._rows_sum)
+            # Zamień wartości wynikające z dzielenia przez zero na 0 (lub np.nan).
+            result[np.isnan(result)] = np.nan
+        return np.round(result, self.precision)
+
 
     def _errors_of_commision(self):
         diff = self._cols_sum - self._diagonalne
         return np.round(diff / self._cols_sum, self.precision)
 
     def _producer_accuracy(self):
-        return np.round(self._diagonalne / self._rows_sum, self.precision)
+        # return np.round(self._diagonalne / self._rows_sum, self.precision)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            result = np.true_divide(self._diagonalne,
+                                    self._rows_sum,
+                                    where=self._rows_sum != 0,
+                                    out=np.full_like(self._diagonalne,
+                                                     np.nan,
+                                                     dtype=float)
+                                    )
+            # Zamień wartości wynikające z dzielenia przez zero na 0 (lub np.nan).
+            # result[np.isnan(result)] = -1
+        return np.round(result, self.precision)
 
     def _user_accuracy(self):
         return np.round(self._diagonalne / self._cols_sum, self.precision)
 
     # ....................................................
 
-    def _zestawienie(self):
+    def _table_results(self):
         df = pd.DataFrame([])
         kols = ["OA", "PA", "UA", "OME", "CME"]
         # słownik atrybutów instancji
@@ -170,7 +187,7 @@ class AccClasic:
         df.index = self.rows
         return df
 
-    def _roundTable(self):
+    def _round_table(self):
         tabela = self.tabela.copy()
         tabela = np.round(tabela, self.precision)
         return tabela
@@ -188,14 +205,14 @@ class AccClasicBin(AccClasic):
     # Dane
 
     Dane wejściowe:   pd.DataFRame, tabela true/false w układzie:
-                      ----------------------------
+                      ------------------------
                       |    |owies| zyto| ... |
-                      | ---| --- | --- |---- |
+                      |----+-----+-----+-----|
                       | TP |  1  |  55 | ... |
                       | TN | 15  |  99 | ... |
                       | FP |  5  |   3 | ... |
                       | FN | 33  |  46 | ... |
-                      ----------------------------
+                      ------------------------
 
     # Metryki
 
@@ -264,10 +281,10 @@ class AccClasicBin(AccClasic):
         mian = self.data.loc["TP", :] + self.data.loc["FP", :]
         return licznik / mian
 
-    def _oblicz_sumy(self):
+    def _calculate_sums(self):
         pass
 
-    def _zestawienie(self):
+    def _table_results(self):
         df = pd.DataFrame([])
         kols = ["OA", "PA", "UA", "OME", "CME"]
         # słownik atrybutów instancji
