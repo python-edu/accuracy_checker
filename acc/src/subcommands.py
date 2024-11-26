@@ -38,7 +38,8 @@ def create_binary_matrix(cross: pd.DataFrame):
 def from_raw(args):
     """Performs calculations on data that is read from a file containing
     2 or 3 columns (raw data)."""
-    data = pd.read_csv(args.path, sep=args.sep)
+    kwargs = {'header': 0, 'index_col': None}
+    data = pd.read_csv(args.path, sep=args.sep, **kwargs)
     raw_obj = crm.RawData(data, map_labels=args.map_labels)
     cm_obj = crm.CrossMatrix(raw_obj.map_labels,
                              raw_obj.true_values,
@@ -54,7 +55,8 @@ def from_raw(args):
 def from_cross_full(args):
     """Performs calculations on data of type `cross_full` - cross matrix
     with row and column descriptions and with row and column sums."""
-    cross_full = pd.read_csv(args.path, sep=args.sep, index_col=0)
+    kwargs = {'header': 0, 'index_col': 0}
+    cross_full = pd.read_csv(args.path, sep=args.sep, **kwargs)
     # cross = cross_full.iloc[:-1, :-1]
     # binary_cross, binary_cross_rep = create_binary_matrix(cross)
     
@@ -69,7 +71,8 @@ def from_cross_full(args):
 def from_cross(args):
     """Performs calculations on `cross` data - cross matrix with row
     and column descriptions but without the sum of rows and columns."""
-    cross = pd.read_csv(args.path, sep=args.sep, index_col=0)
+    kwargs = {'header': 0, 'index_col': 0}
+    cross = pd.read_csv(args.path, sep=args.sep, **kwargs)
     
     valid_cm = crm.CrossMatrixValidator(cross, args.map_labels)
     binary_obj = create_binary_matrix(valid_cm.cross)
@@ -80,10 +83,12 @@ def from_cross(args):
 def from_cross_raw(args):
     """Performs calculations on `cross_raw` data - cross matrix without
     row and column descriptions, without row and column sums, i.e. a
-    table of numbers only."""
-    cross_raw = pd.read_csv(args.path,
-                            sep=args.sep,
-                            index_col=False, header=None)
+    table of numbers only.
+    It must be a square matrix, otherwise it is impossible to map classes
+    (it is not known which is which)!!!
+    """
+    kwargs = {'header': None, 'index_col': None}
+    cross_raw = pd.read_csv(args.path, sep=args.sep, **kwargs)
 
     valid_cm = crm.CrossMatrixValidator(cross_raw, args.map_labels)
     binary_obj = create_binary_matrix(valid_cm.cross)
@@ -97,14 +102,15 @@ def from_binary(args):
     layout): TP, TN, FP, FN.
      - binary_cross_rep: in vertical format, for reporting purposes!!
     """
+    kwargs = {'header': 0, 'index_col': 0}
     binary_obj = BinaryMatrix()
     valid_cm = BinaryMatrix()
 
     if hasattr(args, 'reversed') and args.reversed:
-        binary_cross_rep = pd.read_csv(args.path, sep=args.sep, index_col=0)
+        binary_cross_rep = pd.read_csv(args.path, sep=args.sep, **kwargs)
         binary_cross = binary_cross_rep.T
     else:
-        binary_cross = pd.read_csv(args.path, sep=args.sep, index_col=0)
+        binary_cross = pd.read_csv(args.path, sep=args.sep, **kwargs)
         binary_cross_rep = binary_cross.T
 
     binary_obj.binary_cross = binary_cross
@@ -147,7 +153,7 @@ def from_imgs(args):
                              raw_obj.predicted
                              )
 
-    valid_cm = crm.CrossMatrixValidator(cm_obj.cross_full, cm_obj.map_labels)
+    valid_cm = crm.CrossMatrixValidator(cm_obj.cross_full)
     binary_obj = create_binary_matrix(valid_cm.cross)
     return valid_cm, binary_obj
 # ---

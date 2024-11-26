@@ -1,4 +1,4 @@
-# --- ---*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import copy
 import numpy as np
@@ -16,6 +16,15 @@ true_name = 'true'
     - calculating 'cross matrix' from data containing true and predicted
       labels.
     - if verbal names of classes are available, they are used
+
+Note! assumption:
+ Cross_raw: matrix without row and column descriptions, without summaries
+ can be returned / passed either:
+    - numpy array
+    - pd.DataFrame, where indexes and column names are zero-based ints -
+      have nothing to do with class names!!
+
+        The matrix must be square!!!
 """
 # ---
 
@@ -178,10 +187,224 @@ class CrossMatrixRecognizer:
 
 
 
-
-
-
 class CrossMatrixValidator:
+    """
+    Validates and processes a cross matrix.
+
+    Attributes:
+        data (pd.DataFrame): The original cross matrix (raw, cross, or full).
+        type_cross (str): Detected type of the matrix ('raw', 'cross', or 'full').
+        cross_raw (pd.DataFrame): Processed square matrix without labels or sums.
+        cross (pd.DataFrame): Matrix with labels.
+        cross_full (pd.DataFrame): Matrix with labels and sums.
+    """
+
+    def __init__(self, data, map_labels: dict = None, label_prefix="cl", scheme="normal", type_cross=None):
+        """
+        Initializes the validator with the input data and optional parameters.
+
+        Args:
+            data: The cross matrix, which can be a list of lists, np.array, or pd.DataFrame.
+            map_labels (dict, optional): Optional mapping for labels.
+            label_prefix (str): Prefix for generating column and row labels (e.g., 'cl' -> 'cl_01').
+            scheme (str): Layout of rows and columns ('normal' or 'reverse').
+            type_cross (str, optional): Predefined matrix type ('raw', 'cross', or 'full').
+        """
+        self.scheme = scheme
+        self.data = self._enter_data(data)
+        self.map_labels = map_labels.copy() if map_labels else None
+        self.label_prefix = label_prefix
+        self.type_cross = type_cross if type_cross else self._detect_type()
+
+        # Processed matrices.
+        self.cross_raw = None
+        self.cross_raw_sq = None
+        self.cross = None
+        self.cross_sq = None
+        self.cross_full = None
+        self.cross_full_sq = None
+
+        self._process_matrices()
+
+    def __repr__(self):
+        return f"Type_cross: {self.type_cross}\nMap_labels: {self.map_labels}"
+
+    # --- Main Methods ---
+
+    def _process_matrices(self):
+        """
+        Processes the input data into different matrix forms.
+        """
+        self.map_labels = self._create_map_labels()
+        if self.type_cross == 'raw':
+            self.cross_raw = self.data.copy()
+            self._cross_from_raw()
+            self._full_from_cross()
+        elif self.type_cross == 'cross':
+            self._remap_labels()
+            self._raw_from_cross()
+            self._full_from_cross()
+        elif self.type_cross == 'full':
+            self._remap_labels()
+            self._cross_from_full()
+            self._raw_from_cross()
+
+    def _enter_data(self, data) -> pd.DataFrame:
+        """
+        Converts the input data into a DataFrame and adjusts it based on the scheme.
+
+        Args:
+            data: Input data, which can be a list, np.array, or pd.DataFrame.
+
+        Returns:
+            pd.DataFrame: Adjusted DataFrame with integer values.
+        """
+        data = copy.deepcopy(data)
+
+        if isinstance(data, (list, tuple, np.ndarray)):
+            data = pd.DataFrame(data)
+            data.columns = range(data.shape[1])
+            data.index = range(data.shape[0])
+            self.type_cross = 'raw'
+
+        if self.scheme == 'reverse':
+            data = data.T
+
+        data.columns.name = "predicted"
+        data.index.name = "true"
+        return data.astype(int)
+
+    def _detect_type(self) -> str:
+        """
+        Detects the type of the input matrix.
+
+        Returns:
+            str: The type ('raw', 'cross', 'full').
+        """
+        if CrossMatrixRecognizer.is_raw(self.data):
+            return "raw"
+        if CrossMatrixRecognizer.is_full(self.data):
+            return "full"
+        return "cross"
+
+    def _create_map_labels(self) -> dict:
+        """
+        Creates a mapping of numerical labels to string labels.
+
+        Returns:
+            dict: A dictionary mapping numerical labels to string labels.
+        """
+        if self.map_labels is not None:
+            return self.map_labels
+        
+        if self.type_cross == 'raw':
+            prefix = self.label_prefix
+            n = self.data.shape[0]
+            return {i: f"{prefix}_{i:0>2}" for i in range(1, n + 1)}
+        return None
+
+    def _remap_labels(self):
+        """
+        Remaps labels in the data using the mapping provided.
+        """
+        data = self.data.copy()
+        if self.type_cross == 'full':
+            data = data.iloc[:-1, :-1]
+        # breakpoint() 
+        if self.map_labels:
+            data.columns = [self.map_labels[key] for key in data.columns]
+            data.index = [self.map_labels[key] for key in data.index]
+
+        data_sq = CrossMatrixValidator._make_matrix_square(data, self.scheme)
+        if self.type_cross == 'cross':
+            self.cross = data
+            self.cross_sq = data_sq
+        elif self.type_cross == 'full':
+            self.cross_full = self._add_sums_cols_rows(data)
+            self.cross_full_sq = self._add_sums_cols_rows(data_sq)
+
+    def _raw_from_cross(self):
+        """
+        Creates a square version of the raw matrix without labels or sums.
+        """
+        cross_raw = self.cross_sq.copy()
+        cross_raw.index = range(len(cross_raw.index))
+        cross_raw.columns = range(len(cross_raw.columns))
+        cross_raw.columns.name = "predicted"
+        cross_raw.index.name = "true"
+        self.cross_raw = cross_raw
+
+    def _full_from_cross(self):
+        """
+        Creates the full cross matrix with sums added to rows and columns.
+        """
+        self.cross_full = self._add_sums_cols_rows(self.cross)
+        self.cross_full_sq = self._add_sums_cols_rows(self.cross_sq)
+
+    def _cross_from_raw(self):
+        """
+        Creates a labeled cross matrix from a raw matrix.
+        """
+        cross = self.cross_raw.copy()
+        map_labels = self.map_labels
+        names = [map_labels[i] for i in range(1, cross.shape[0] + 1)]
+
+        cross.columns = names
+        cross.index = names
+        cross.columns.name = "predicted"
+        cross.index.name = "true"
+        self.cross = cross
+        self.cross_sq = cross
+
+    def _cross_from_full(self):
+        """
+        Extracts the cross matrix from a full matrix by removing sums.
+        """
+        self.cross = self.cross_full.iloc[:-1, :-1]
+        self.cross_sq = self.cross_full_sq.iloc[:-1, :-1]
+
+    # --- Static Utility Methods ---
+
+    @staticmethod
+    def _make_matrix_square(matrix: pd.DataFrame, scheme: str) -> pd.DataFrame:
+        """
+        Ensures the matrix is square by reindexing rows and columns.
+
+        Args:
+            matrix (pd.DataFrame): The input matrix.
+            scheme (str): Layout scheme ('normal' or 'reverse').
+
+        Returns:
+            pd.DataFrame: A square matrix.
+        """
+        matrix = matrix.copy()
+        if scheme == 'normal':
+            matrix = matrix.reindex(index=matrix.columns, fill_value=0)
+        else:
+            matrix = matrix.reindex(columns=matrix.index, fill_value=0)
+        return matrix
+
+    @staticmethod
+    def _add_sums_cols_rows(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Adds sums to the rows and columns of the matrix.
+
+        Args:
+            df (pd.DataFrame): Input DataFrame.
+
+        Returns:
+            pd.DataFrame: DataFrame with sums added.
+        """
+        df = df.copy()
+        df.loc[:, "sums"] = df.sum(axis=1)
+        df.loc["sums", :] = df.sum(axis=0)
+        df.columns.name = "predicted"
+        df.index.name = "true"
+        return df.astype(int)
+
+
+
+class CrossMatrixValidator_old:
     """
     Validates and processes a cross matrix.
 
@@ -197,7 +420,8 @@ class CrossMatrixValidator:
                  data,
                  map_labels: dict = None,
                  label_prefix="cl",
-                 scheme="normal"
+                 scheme="normal",
+                 type_cross = None
                  ):
         """
         Initializes the validator with the input data and optional parameters.
@@ -219,7 +443,7 @@ class CrossMatrixValidator:
         self.label_prefix = label_prefix
 
         # Detect matrix type: 'raw', 'cross', 'full'.
-        self.type_cross = self._detect_type()
+        self.type_cross = type_cross if type_cross else self._detect_type()
 
         # Processed matrices.
         self.cross_raw = None
@@ -242,11 +466,21 @@ class CrossMatrixValidator:
         """
         Processes the input data into different matrix forms.
         """
-        self._make_cross_raw()
         self.map_labels = self._create_map_labels()
-        self.cross = self._make_cross(self.cross_raw, self.map_labels)
-        self.cross_sq = self._make_cross(self.cross_raw_sq, self.map_labels)
-        self._make_cross_full()
+        
+        if self.type_cross == 'raw':
+            self.cross_raw = self.data.copy()
+            self._cross_from_raw()
+            self._full_from_cross()
+        elif self.type_cross == 'cross':
+            self._remap_lables()
+            self._raw_from_cross()
+            self._full_from_cross()
+        elif self.type_cross == 'full':
+            self._remap_lables()
+            self._cross_from_full()
+            self._raw_from_cross()
+
 
     def _enter_data(self, data) -> pd.DataFrame:
         """
@@ -265,6 +499,7 @@ class CrossMatrixValidator:
             data = pd.DataFrame(data)
             data.columns = range(data.shape[1])
             data.index = range(data.shape[0])
+            self.type_cross = 'raw'
 
         if self.scheme == 'reverse':
             data = data.T
@@ -280,6 +515,7 @@ class CrossMatrixValidator:
         Returns:
             A string indicating the type ('raw', 'cross', 'full').
         """
+
         if CrossMatrixRecognizer.is_raw(self.data):
             return "raw"
         if CrossMatrixRecognizer.is_full(self.data):
@@ -293,45 +529,55 @@ class CrossMatrixValidator:
         Returns:
             A dictionary mapping numerical labels to string labels.
         """
+        map_labels = None
+
         if self.map_labels is not None:
             return self.map_labels
-
-        df = self.data.copy()
-        if self.type_cross == 'full':
-            df = df.iloc[:-1, :-1]
-
-        if self.scheme == 'normal':
-            all_classes = list(df.columns)
-        else:
-            all_classes = list(df.index)
-
-        if self.type_cross in ('full', 'cross'):
-            map_labels = {i: name for i, name in enumerate(all_classes, 1)}
-        else:
-            map_labels = {i: f"{self.label_prefix}_{i}" for i \
-                    in range(1, len(all_classes) + 1)}
+        
+        if self.type_cross == 'raw':
+            prefix = self.label_prefix
+            n = self.data.shape[0]
+            map_labels = {i: f"{prefix}_{i:0>2}" for i in range(1, n+1)}
         return map_labels
 
-    def _make_cross_raw(self):
+    def _remap_lables(self):
+        data = self.data.copy()
+        map_labels = self.map_labels
+
+        if self.type_cross == 'full':
+            data = data.iloc[:-1, :-1]
+
+        n_rows, n_cols = data.shape
+        prefix = self.label_prefix
+        
+        if map_labels:
+            col_labels = [map_labels[key] for key in data.columns]
+            row_labels = [map_labels[key] for key in data.index]
+            data.columns = col_labels[:]
+            data.index = row_labels[:]
+
+        # square
+        data_sq = CrossMatrixValidator._make_matrix_square(data, self.scheme)
+
+        if self.type_cross == 'cross':
+            self.cross = data.copy()
+            self.cross_sq = data_sq.copy()
+        elif self.type_cross == 'full':
+            self.cross_full = self._add_sums_cols_rows(data)
+            self.cross_full_sq = self._add_sums_cols_rows(data_sq)
+
+    def _raw_from_cross(self):
         """
         Creates a square version of the raw matrix without labels or sums.
         """
-        if self.type_cross in ('raw', 'cross'):
-            matrix = self.data.copy()
-        elif self.type_cross == 'full':
-            matrix = self.data.iloc[:-1, :-1]
+        cross_raw = self.cross_sq.copy()
+        cross_raw.index = range(len(cross_raw.index))
+        cross_raw.columns = range(len(cross_raw.columns))
+        cross_raw.columns.name = "predicted"
+        cross_raw.index.name = "true"
+        self.cross_raw = cross_raw.copy()
 
-        matrix_sq = self._make_matrix_square(matrix, self.scheme)
-
-        self.cross_raw_sq = matrix_sq.copy()
-        self.cross_raw_sq.index = range(1, matrix_sq.shape[0] + 1)
-        self.cross_raw_sq.columns = range(1, matrix_sq.shape[1] + 1)
-        self.cross_raw_sq.columns.name = "predicted"
-        self.cross_raw_sq.index.name = "true"
-
-        self.cross_raw = self._remove_empty_predicted()
-
-    def _make_cross_full(self):
+    def _full_from_cross(self):
         """
         Creates the full cross matrix with sums added to rows and columns.
         """
@@ -359,8 +605,7 @@ class CrossMatrixValidator:
             matrix = matrix.reindex(columns=matrix.index, fill_value=0)
         return matrix
 
-    @staticmethod
-    def _make_cross(matrix: pd.DataFrame, map_labels: dict) -> pd.DataFrame:
+    def _cross_from_raw(self):
         """
         Creates a cross matrix with labeled rows and columns.
 
@@ -371,15 +616,30 @@ class CrossMatrixValidator:
         Returns:
             A labeled cross matrix.
         """
-        cross = matrix.copy()
-        row_labels = [map_labels[i] for i in matrix.index]
-        col_labels = [map_labels[i] for i in matrix.columns]
+        cross = self.cross_raw.copy()
+        map_labels = self.map_labels.copy()
+        names = [map_labels[i] for i in range(1, cross.shape[0]+1)]
 
-        cross.columns = col_labels
-        cross.index = row_labels
+        cross.columns = names
+        cross.index = names
         cross.columns.name = "predicted"
         cross.index.name = "true"
-        return cross
+        self.cross = cross.copy()
+        self.cross_sq = cross.copy()
+
+    def _cross_from_full(self):
+        """
+        Creates a cross matrix with labeled rows and columns.
+
+        Args:
+            matrix: Input matrix.
+            map_labels: Mapping of numerical labels to string labels.
+
+        Returns:
+            A labeled cross matrix.
+        """
+        self.cross = self.cross_full.iloc[:-1, :-1].copy()
+        self.cross_sq = self.cross_full_sq.iloc[:-1, :-1].copy()
 
     @staticmethod
     def _add_sums_cols_rows(df: pd.DataFrame) -> pd.DataFrame:
@@ -401,431 +661,27 @@ class CrossMatrixValidator:
 
     # --- Helper Methods ---
 
-    def _remove_empty_predicted(self) -> pd.DataFrame:
-        """
-        Removes rows and columns with only zero values from the raw matrix.
+    #def _remove_empty_predicted(self) -> pd.DataFrame:
+    #    """
+    #    Removes rows and columns with only zero values from the raw matrix.
+
+    #    Returns:
+    #        The cleaned matrix.
+    #    """
+    #    cross = self.cross_raw_sq.copy()
+    #    if self.scheme != 'normal':
+    #        cross = cross.T
+
+    #    rows_sum = cross.sum(axis=1)
+    #    idx = rows_sum == 0
+
+    #    if idx.any():
+    #        cross = cross.drop(index=cross.index[idx])
+
+    #    if self.scheme != 'normal':
+    #        cross = cross.T
+    #    return cross
 
-        Returns:
-            The cleaned matrix.
-        """
-        cross = self.cross_raw_sq.copy()
-        if self.scheme != 'normal':
-            cross = cross.T
-
-        rows_sum = cross.sum(axis=1)
-        idx = rows_sum == 0
-
-        if idx.any():
-            cross = cross.drop(index=cross.index[idx])
-
-        if self.scheme != 'normal':
-            cross = cross.T
-        return cross
-
-
-class CrossMatrixValidator_old:
-    """
-    Validates and processes a cross matrix.
-
-    Attributes:
-        data: Original cross matrix (raw, cross, or full).
-        type_cross: Detected type of the matrix ('raw', 'cross', or 'full').
-        cross_raw: Processed square matrix without labels or sums.
-        cross: Matrix with labels.
-        cross_full: Matrix with labels and sums.
-    """
-    def __init__(self,
-                 data,
-                 map_labels: dict = None,
-                 label_prefix="cl",
-                 scheme="normal",
-                 ):
-        """
-        Args:
-          - data:  cross matrix, lista list, np.array lub pd.DataFrame
-          - label_prefix: str, label_prefix do tworzenia nazw koumn i wierszy
-                        np. cl --> cl_01, cl_02, ...
-
-          - scheme: str, określa układ kolumn i wierszy:
-                    - normal:  układ w wierszach `true` w kolumnach `predicted`
-                    - reverse: układ odwrócony
-
-          - type_cross: str, określa zawartość cross matrix:
-                   - raw:  same liczby, bez nazw kolumn i wierszy, bez sum
-                   - cross: liczby z opisami kolumn/wierszy, bez sum
-                   - full: wszystko, z sumami w wierszach i kolumnach
-        """
-
-        self.scheme = scheme
-        self.data = self._enter_data(data)
-
-        # detect matrix type: raw, cross, full
-        self.type_cross = self._detect_type()
-        self.map_labels = map_labels.copy() if map_labels else None
-        self.label_prefix = label_prefix
-
-        self.cross_raw = None
-        self.cross_raw_sq = None
-        self.cross = None
-        self.cross_sq = None
-        self.cross_full = None
-        self.cross_full_sq = None
-
-        self._process_matrices()
-    # --- ---
-
-    def __repr__(self):
-        return f"""\n\tType_cross: {self.type_cross}
-        map_labels: {self.map_labels}\n"""
-
-    def _process_matrices(self):
-        """The method performs most of the calculations, so they can be
-        triggered by other methods, e.g. when updating the value of an
-        attribute.
-        """
-
-        # --- completes missing rows and columns (square) and assigns the
-        #     result to the appropriate variable (cross_raw, cross, cross_full)
-
-        # --- create `cross_row` (if it doesn't exist)
-        self._make_cross_raw()
-        self.map_labels = self._create_map_labels()
-
-        self.cross = self._make_cross(self.cross_raw, self.map_labels)
-        self.cross_sq = self._make_cross(self.cross_raw_sq, self.map_labels)
-        self._make_cross_full()
-        # ---
-
-    @staticmethod
-    def _make_matrix_square(matrix, scheme):
-        matrix = matrix.copy()
-        if scheme == 'normal':
-            matrix = matrix.reindex(index=matrix.columns, fill_value=0)
-        else:
-            matrix = matrix.reindex(columns=matrix.index, fill_value=0)
-        return matrix
-
-    @staticmethod
-    def _make_cross(matrix, map_labels):
-        cross = matrix.copy()
-        row_labels, col_labels = CrossMatrixValidator._create_cols_rows_names(
-                cross,
-                map_labels
-                )
-        cross.columns = col_labels
-        cross.index = row_labels
-        cross.columns.name = predict_name  # 'predicted'
-        cross.index.name = true_name  # 'true'
-        return cross
-        # ---
-
-    @staticmethod
-    def _create_cols_rows_names(matrix, map_labels):
-        row_labels = [map_labels[i] for i in matrix.index]
-        col_labels = [map_labels[i] for i in matrix.columns]
-        return row_labels, col_labels
-
-    def _enter_data(self, data) -> pd.DataFrame:
-        data = copy.deepcopy(data)
-
-        if isinstance(data, (list, tuple, np.ndarray)):
-            data = pd.DataFrame(data)
-            cols = list(range(data.shape[1]))
-            rows = list(range(data.shape[0]))
-            data.columns = cols[:]
-            data.index = rows[:]
-
-        if self.scheme == 'reverse':
-            data = data.T
-        data.columns.name = predict_name  # 'predicted'
-        data.index.name = true_name  # 'true'
-        return data.astype('int')
-        # ---
-
-    @staticmethod
-    def _add_sums_cols_rows(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        sum_row = df.sum(axis=1).to_numpy()
-        df.loc[:, "sums"] = sum_row
-
-        sum_col = df.sum(axis=0).to_numpy()
-        df.loc["sums", :] = sum_col
-
-        df.columns.name = predict_name  # 'predicted'
-        df.index.name = true_name  # 'true'
-
-        return df.astype("int")
-
-    def _detect_type(self):
-        """Detects the type of the input matrix."""
-        if CrossMatrixRecognizer.is_raw(self.data):
-            return "raw"
-        if CrossMatrixRecognizer.is_full(self.data):
-            return "full"
-        return "cross"
-
-    def _create_map_labels(self):
-        if self.map_labels is not None:
-            return self.map_labels
-
-        df = self.data.copy()
-        if self.type_cross == 'full':
-            df = df.iloc[:-1, :-1]
-
-        # all_classes = sorted(set(df.columns).union(df.index))
-        if self.scheme == 'normal':
-            all_classes = list(df.columns)
-        else:
-            all_classes = list(df.index)
-
-        if self.type_cross in ('full', 'cross'):
-            map_labels = {i: name for i, name in enumerate(all_classes, 1)}
-        else:
-            # map_labels = {i: f"{self.label_prefix}_{i}" for i, _ \
-            #         in enumerate(all_classes, 1)}
-            map_labels = {i: f"{self.label_prefix}_{i}" for i \
-                    in range(1, len(all_classes) + 1)}
-        return map_labels
-
-    def _make_cross_raw(self):
-        """Creates a square version of the matrix without labels or sums."""
-        # matrix: can be (depending on input) numbers only or
-        # numbers + column descriptions
-        if self.type_cross in ('raw', 'cross'):
-            matrix = self.data.copy()
-        elif self.type_cross == 'full':
-            matrix = self.data.iloc[:-1, :-1]
-        # breakpoint()
-        matrix_sq = self._make_matrix_square(matrix, self.scheme)
-
-        self.cross_raw_sq = matrix_sq.copy()
-        self.cross_raw_sq.index = range(1, matrix_sq.shape[0] + 1)
-        self.cross_raw_sq.columns = range(1, matrix_sq.shape[1] + 1)
-
-        # module global variables: true_name, predict_name
-        self.cross_raw_sq.columns.name = predict_name
-        self.cross_raw_sq.index.name = true_name
-
-        self.cross_raw = self._remove_empty_predicted()
-        # module global variables: true_name, predict_name
-        self.cross_raw.columns.name = predict_name
-        self.cross_raw.index.name = true_name
-        # ---
-
-    def _make_cross_full(self):
-        self.cross_full = self._add_sums_cols_rows(self.cross)
-        self.cross_full_sq = self._add_sums_cols_rows(self.cross_sq)
-    
-
-    def _make_cross_square(self) -> None:
-        df = self.data.copy()
-        if self.type_cross == 'full':
-            # the name of the column and row containing summaries can be 
-            # different, e.g. `sum_row` and `sum_col`. Sets the same name
-            # for both cases, e.g. `sums`
-            name = 'sums'
-            df.columns = [*df.columns[:-1], name]
-            df.index = [*df.index[:-1], name]
-            df.columns.name = predict_name  # 'predicted'
-            df.index.name = true_name  # 'true'
-
-        existing_labels = set(df.index).union(df.columns)
-        existing_labels = sorted(existing_labels)
-        
-        # make square cross
-        df_square = df.reindex(index=existing_labels,
-                               columns=existing_labels,
-                               fill_value=0)
-        
-        # save results
-        if self.type_cross == 'raw':
-            self.cross_raw = df_square
-        elif self.type_cross == 'cross':
-            self.cross = df_square
-        else:
-            self.cross_full = df_square
-
-    def _remove_empty_predicted(self):
-        """Sometimes there are classes with all zeros, which causes Nan values
-        and problems with division by zero. The function removes such rows and
-        columns.
-
-        Args:
-            - cross_raw: pd.crossstab, no row and column descriptions,
-              no summaries.
-        """
-        # jeśli dana klasa ma same zera to suma w wierszu i kolumnie jest
-        # taka sama = 0. Numer wiersza i kolumny jest ten sam - macierz
-        # kwadratowa.
-        cross = self.cross_raw_sq.copy()
-
-        # normal: remove rows
-        if self.scheme != 'normal':
-            cross = cross.T
-
-        rows_sum = cross.sum(axis=1) # .to_numpy()
-        idx = rows_sum == 0
-
-        if idx.any():
-            # rows index - do usunięcia
-            ri = cross.index[idx]
-            cross.drop(index=ri, inplace=True)
-
-        if self.scheme != 'normal':
-            cross = cross.T
-        return cross
-
-    def _usun_puste(self):
-        """Sometimes there are classes with all zeros, which causes Nan values
-        and problems with division by zero. The function removes such rows and
-        columns.
-
-        Args:
-            - cross_raw: pd.crossstab, no row and column descriptions,
-              no summaries.
-        """
-        # jeśli dana klasa ma same zera to suma w wierszu i kolumnie jest
-        # taka sama = 0. Numer wiersza i kolumny jest ten sam - macierz
-        # kwadratowa.
-        cross = self.cross_raw.copy()
-        rows_sum = cross.sum(axis=1).to_numpy()
-        idx = rows_sum == 0
-
-        if idx.any():
-            # rows index - do usunięcia
-            ri = cross.index[idx]
-
-            # cols index - do usunięcia
-            ci = cross.columns[idx]
-
-            cross.drop(index=ri, inplace=True)
-            cross.drop(columns=ci, inplace=True)
-
-        return cross
-
-    def _number_labels_to_strings(self):
-        "When column and row labels are numbers - converts them to strings."
-        cross = self.cross_raw.copy()
-        kol_name = cross.columns.name
-        row_name = cross.index.name
-
-        kols = [str(x) for x in cross.columns]
-        rows = [str(x) for x in cross.index]
-
-        cross.columns = kols
-        cross.columns.name = kol_name
-
-        cross.index = rows
-        cross.index.name = row_name
-        return cross.astype("int")
-
-    def _add_text_labels(self):
-        """Creates a new cross matrix in which column and row names are
-        changed from numbers to verbal descriptions, e.g. oats, rye, etc.
-        """
-        cross = self.cross_raw.copy()
-
-        # --- pobierz aktualne liczbowe nazwy kolumn i wierszy
-        all_names = cross.columns.to_list()
-
-        if "sums" in all_names:
-            old = all_names[:-1]
-        else:
-            old = all_names[:]
-        # --- konwersja na string
-        old = [str(x) for x in old]
-
-        kols = [self.map_labels.get(key) for key in old]
-        rows = kols[:]
-
-        if len(rows) < len(all_names):
-            kols.append("sums")
-            rows.append("sums")
-
-        cross.columns = kols
-        cross.index = rows
-        cross.axes[1].name = "predicted"
-        cross.axes[0].name = "true"
-
-        return cross.astype("int")
-
-
-# class ConfusionMatrix:
-#     """
-#     # Result
-#       Returns cross matrix, in 3 three formats:
-#       1. 'cross_raw': raw result from `pd.crosstab()`, which:
-#             - has changed the names of column one and row one to
-#               `predicted` and `true_values`
-#             - no summarized rows and columns
-#             - no verbal descriptions of classes
-#             - equalized number of rows and columns
-#             - deleted rows and columns with all zeros
-#             - numbers in row and column names changed to `str`
-#             - table values changed to `int`
-# 
-#       1. 'cross_raw': surowy wynik z `pd.crosstab()`, który:
-#             - ma zmienione nazwy kolumny pierwszej i wiersza pierwszego na
-#               `predicted` i `true_values`
-#             - bez podsumowanych wierszy i kolumn
-#             - bez opisów słownych klas
-#             - wyrównana liczba wierszy i kolumn
-#             - usunięte wiersze i kolumny z samymi zerami
-#             - liczby w nazwach wierszy i kolumn zamienione na `str`
-#             - wartości tabeli zamienione na `int`
-# 
-#               predicted    1  2  3  4
-#               true
-#               1            3  0  1  0
-#               2            1  3  1  0
-#               3            0  2  2  0
-#               4            1  1  0  0
-# 
-# 
-#       2. 'cross': to samo co cross_raw ale z dodanymi opisami wierszy i kolumn.
-#             Opisy zależą od danych: albo są wzięte z pierwszej kolumny danych
-#             albo wygenerowane ze stałej etykiety z kolejnym numerem. Przykład
-#             poniżej zawiera domyślną etykietę klas.
-# 
-#               predicted  cl_1  cl_2  cl_3  cl_4
-#               true
-#               cl_1          3     0     1     0
-#               cl_2          1     3     1     0
-#               cl_3          0     2     2     0
-#               cl_4          1     1     0     0
-# 
-#       3. `cross_full`:  pełna macierz z sumami wierszy i kolumn
-# 
-#               predicted  cl_1  cl_2  cl_3  cl_4  sum_row
-#               true
-#               cl_1          3     0     1     0        4
-#               cl_2          1     3     1     0        5
-#               cl_3          0     2     2     0        4
-#               cl_4          1     1     0     0        2
-#               sum_col       5     6     4     0       15
-# 
-# 
-#     # Dane wejściowe / Input data
-#       Wyniki klasyfikacji obrazów w postaci tabeli o 2 lub 3 kolumnach. /
-#       Image classification results in the form of a table with 2 or 3 columns.
-# 
-#       1. Dwie kolumny / two columns:
-# 
-#              |  true_values | predicted |
-#              | ------------ | --------- |
-#              |     int      |    int    |
-#              |     ...      |    ...    |
-# 
-#       2. Trzy kolumny / three columns:
-# 
-#              | labels |  true_values | predicted |
-#              | ------ | ------------ | --------- |
-#              |   str  |     int      |    int    |
-#              |   ...  |     ...      |    ...    |
-# 
-#              gdzie labels to nazwy klas np. owies, przenica, woda, ...
-#     """
-# 
 
 
 class CrossMatrix:
@@ -862,19 +718,24 @@ class CrossMatrix:
     def _generate_matrices(self):
         """Generates all confusion matrix variants."""
         all_classes = sorted(set(self.true_values) | set(self.predicted))
-
+        # breakpoint()
         # Create raw confusion matrix
-        cross_raw = pd.crosstab(
+        tmp_cross = pd.crosstab(
             pd.Series(self.true_values, name="true"),
             pd.Series(self.predicted, name="predicted"),
             dropna=False,
         )
-        self.cross_raw = cross_raw.reindex(
+        tmp_cross = tmp_cross.reindex(
             index=all_classes, columns=all_classes, fill_value=0
         )
 
+        # cross_raw: only numbers with "natural" (0,1,...) col row names
+        self.cross_raw = tmp_cross.copy()
+        self.cross_raw.columns = range(tmp_cross.shape[1])
+        self.cross_raw.index = range(tmp_cross.shape[0])
+
         # Create labeled matrix
-        self.cross = self._add_labels(self.cross_raw)
+        self.cross = self._add_labels(tmp_cross)
 
         # Create labeled matrix with summaries
         self.cross_full = self._add_summaries(self.cross)

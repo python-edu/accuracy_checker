@@ -18,8 +18,17 @@ from acc.src.subcommands import from_cross_raw, from_binary, from_imgs
 # ---
 
 
+def check_if_int(obj):
+    try:
+        int(obj)
+        return True
+    except Exception:
+        return False
+
+
 def is_data_raw(df: pd.DataFrame) -> Tuple[bool, dict]:
     tests = []
+    ref_columns = ['true', 'predicted']
     meta = {'func': from_raw, 'data_type': 'data'}
     
     # raw data is 2 or 3 columns
@@ -27,16 +36,9 @@ def is_data_raw(df: pd.DataFrame) -> Tuple[bool, dict]:
         tests.append(True)
     else:
         tests.append(False)
-    
-    # checks if df has the expected column names
-    if df.shape[1] == 2:
-        columns = ['true', 'predict']
-    # elif df.shape[1] == 3:
-    else:
-        columns = ['short', 'true', 'predicted']
-
+        
     check_names = [True if name in list(df.columns)
-                   else False for name in columns]
+                   else False for name in ref_columns]
 
     tests.extend(check_names)
     check = all(tests)
@@ -48,9 +50,9 @@ def is_data_raw(df: pd.DataFrame) -> Tuple[bool, dict]:
 
 def is_cross_full(df: pd.DataFrame) -> Tuple[bool, dict]:
     meta = {'func': from_cross_full, 'data_type': 'full'}
-    cols_sum = df.iloc[:-1, 1:-1].sum(axis=0)
-    rows_sum = df.iloc[:-1, 1:-1].sum(axis=1)
-    check1 = all(df.iloc[-1, 1:-1] == cols_sum)
+    cols_sum = df.iloc[:-1, :-1].sum(axis=0)
+    rows_sum = df.iloc[:-1, :-1].sum(axis=1)
+    check1 = all(df.iloc[-1, :-1] == cols_sum)
     check2 = all(df.iloc[:-1, -1] == rows_sum)
 
     check = all([check1, check2])
@@ -60,13 +62,10 @@ def is_cross_full(df: pd.DataFrame) -> Tuple[bool, dict]:
 # ---
 
 
-
 def is_cross_raw(df: pd.DataFrame) -> Tuple[bool, dict]:
     meta = {'func': from_cross_raw, 'data_type': 'raw'}
-    # checks if the first row contains numbers
-    check1 = all(pd.to_numeric(df.iloc[0, :], errors='coerce').notna())
-    check2 = all(pd.to_numeric(df.iloc[:, 0], errors='coerce').notna())
-    check = all([check1, check2])
+    check = df.shape[0] == df.shape[1]
+    
     if not check:
         meta=None
     return check, meta
@@ -77,10 +76,18 @@ def is_cross_matrix(df: pd.DataFrame) -> bool:
     # cross: matrix with numbers, row and column descriptions,
     # and without no summaries
     meta = {'func': from_cross, 'data_type': 'cross'}
-    # checks if all columns are numbers 
-    func = pd.api.types.is_numeric_dtype
-    numeric = [func(df.iloc[:, i]) for i in (-2, -1)]
-    check = all(numeric)
+    # checks if all column names are numbers 
+    check1 = all([check_if_int(name) for name in df.columns])
+
+    if check1:
+        check1 = False
+    else:
+        check1 = True
+
+    # df.columns.name - should not have a nam
+    check2 = df.columns.name is None or df.columns.name in ('', ' ')
+    check = all([check1, check2])
+    
     if not check:
         meta=None
     return check, meta
@@ -151,7 +158,8 @@ def remove_unnecessary_args(args):
 # ---
 
 
-def specify_data_type(args):
+# def specify_data_type(args):
+def recognize_data_type(args):
     """The function determines what type of data `args.path` points to. The
     data are either 'csv' files or '*.tif' and '*.shp' (or '*.gpkg') files.
     In the first step it checks if the data are images (image, vector).
@@ -165,34 +173,25 @@ def specify_data_type(args):
         update_args(args, meta)
         return args
 
-    # if the data is not an image:
-    df = pd.read_csv(args.path, sep=args.sep, header=None, index_col=None)
+    is_functions = {is_data_raw: {'header': 0, 'index_col': None},
+                    is_binary_matrix: {'header': 0, 'index_col': 0},
+                    is_cross_full: {'header': 0, 'index_col': 0},
+                    is_cross_matrix: {'header': 0, 'index_col': 0},
+                    is_cross_raw: {'header': None, 'index_col': None}
+                    }
 
-    # is_cross_raw(): check if is it a matrix of numbers only
-    check, meta = is_cross_raw(df)
-    # breakpoint()
-    if check:
-        update_args(args, meta)
-        return args
-
-    # other functions checking 'is...' are called in the loop
-    is_functions = [is_data_raw,
-                    is_binary_matrix,
-                    is_cross_full,
-                    is_cross_matrix]
-    df = pd.read_csv(args.path, sep=args.sep)
-
-    for func in is_functions:
+    for func, kwargs in is_functions.items():
+        df = pd.read_csv(args.path, sep=args.sep, **kwargs)
         check, meta = func(df)
-        # breakpoint()
+        
         if check:
             update_args(args, meta)
             return args
 # ---
 
 
-def recognize_data_type(args):
-    """Main function to recognize data."""
-    args = specify_data_type(args)
-    args = remove_unnecessary_args(args)
-    return args
+# def recognize_data_type(args):
+#     """Main function to recognize data."""
+#     args = specify_data_type(args)
+#     args = remove_unnecessary_args(args)
+#     return args

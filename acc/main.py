@@ -20,6 +20,7 @@ def main():
 
     # --- scans data and checks data type ---
     args = data_recognition.recognize_data_type(args)
+    args = afn.remove_unnecessary_args(args)
     vb = fn.Verbose(args.verbose)
     vb(args, "Script arguments:", args_data=True)
 

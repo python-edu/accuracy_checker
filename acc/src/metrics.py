@@ -5,10 +5,7 @@ import pandas as pd
 
 # ---
 
-wersja = "w1.2020.08.13"
-opis = """
-Wersja skryptu: {0}.
-
+"""
 Moduł zawiera klasy dostarczające metody do obliczania różnych wskaźników
 dokładności.
 
@@ -19,10 +16,19 @@ Klasy:
   ## 3. 'AccIndex'     - oblicza wskaźniki z machine learning na podstawie
                          'binTF'
 
-""".format(
-    wersja
-)
+"""
 
+def handle_division_errors(func):
+    def wrapper(*args, **kwargs):
+        with np.errstate(divide='ignore', invalid='ignore'):
+            result = func(*args, **kwargs)
+            if isinstance(result, np.ndarray):  # Obsługa tablic NumPy
+                result[np.isnan(result)] = np.nan
+            elif isinstance(result, (float, int)):  # Obsługa pojedynczych liczb
+                if np.isnan(result):
+                    result = np.nan
+            return result
+    return wrapper
 
 # -----------------------------------------------------------------------------
 
@@ -128,10 +134,12 @@ class AccClasic:
 
     # ---
 
+    @handle_division_errors
     def _overall_accuracy(self):
         all_good = self._diagonalne.sum()
         return np.round(all_good / self._total, self.precision)
 
+    @handle_division_errors
     def _errors_of_omission_old(self):
         diff = self._rows_sum - self._diagonalne
         return np.round(diff / self._rows_sum, self.precision)
@@ -145,6 +153,7 @@ class AccClasic:
         return np.round(result, self.precision)
 
 
+    @handle_division_errors
     def _errors_of_commision(self):
         diff = self._cols_sum - self._diagonalne
         return np.round(diff / self._cols_sum, self.precision)
@@ -163,6 +172,7 @@ class AccClasic:
             # result[np.isnan(result)] = -1
         return np.round(result, self.precision)
 
+    @handle_division_errors
     def _user_accuracy(self):
         return np.round(self._diagonalne / self._cols_sum, self.precision)
 
@@ -240,6 +250,7 @@ class AccClasicBin(AccClasic):
     def _get_data(self, data):
         return data.copy()
 
+    @handle_division_errors
     def _x1npv(self):
         """negative predictive value (NPV)
         NPV = TN/(TN + FN) = 1 − FOR"""
@@ -249,6 +260,7 @@ class AccClasicBin(AccClasic):
 
     # ---
 
+    @handle_division_errors
     def _overall_accuracy(self):
         """OV = suma(TP) / (TP + TN + FP + FN)"""
         licznik = self.data.loc["TP", :].to_numpy().sum()
@@ -257,24 +269,28 @@ class AccClasicBin(AccClasic):
         # self.mian = mian
         return licznik / mian
 
+    @handle_division_errors
     def _producer_accuracy(self):
         """PA = TP / (TP + FN)"""
         licznik = self.data.loc["TP", :]
         mian = self.data.loc["TP", :] + self.data.loc["FN", :]
         return licznik / mian
 
+    @handle_division_errors
     def _user_accuracy(self):
         """UA = TP / (TP + FP)"""
         licznik = self.data.loc["TP", :]
         mian = self.data.loc["TP", :] + self.data.loc["FP", :]
         return licznik / mian
 
+    @handle_division_errors
     def _errors_of_omission(self):
         """OME = FN / (TP + FN)"""
         licznik = self.data.loc["FN", :]
         mian = self.data.loc["TP", :] + self.data.loc["FN", :]
         return licznik / mian
 
+    @handle_division_errors
     def _errors_of_commision(self):
         """CME = FP / (TP + FP)"""
         licznik = self.data.loc["FP", :]
@@ -444,6 +460,7 @@ class AccIndex:
 
     # ---
 
+    @handle_division_errors
     def _x1_acc(self):
         """accuracy (ACC):
         ACC = (TP+TN)/(P+N) = (TP+TN)/(TP+TN+FP+FN)
@@ -453,6 +470,7 @@ class AccIndex:
         # print(f'\n\nSprrrrrr:\n\n{licznik}\n\n{mian}\n\nkonirc\n\n')
         return licznik / mian
 
+    @handle_division_errors
     def _x1_ppv(self):
         """precision or positive predictive value (PPV)
         PPV = TP / (TP + FP)
@@ -461,6 +479,7 @@ class AccIndex:
         mian = self.tf.loc[["TP", "FP"], :].sum(axis=0)
         return licznik / mian
 
+    @handle_division_errors
     def _x1_tpr(self):
         """sensitivity, recall, hit rate, or true positive rate (TPR)
         TPR = TP/P = TP/(TP + FN) = 1 − FNR"""
@@ -468,6 +487,7 @@ class AccIndex:
         mian = self.tf.loc[["TP", "FN"], :].sum(axis=0)
         return licznik / mian
 
+    @handle_division_errors
     def _x1_tnr(self):
         """specificity, selectivity or true negative rate (TNR)
         TNR = TN/N = TN/(TN + FP) = 1 − FPR"""
@@ -475,6 +495,7 @@ class AccIndex:
         mian = self.tf.loc[["TN", "FP"], :].sum(axis=0)
         return licznik / mian
 
+    @handle_division_errors
     def _x1_npv(self):
         """negative predictive value (NPV)
         NPV = TN/(TN + FN) = 1 − FOR"""
@@ -482,6 +503,7 @@ class AccIndex:
         mian = self.tf.loc[["TN", "FN"], :].sum(axis=0)
         return licznik / mian
 
+    @handle_division_errors
     def _x1_fnr(self):
         """miss rate or false negative rate (FNR)
         FNR = FN/P = FN/(FN + TP) = 1 − TPR"""
@@ -489,6 +511,7 @@ class AccIndex:
         mian = self.tf.loc[["FN", "TP"], :].sum(axis=0)
         return licznik / mian
 
+    @handle_division_errors
     def _x1_fpr(self):
         """fall-out or false positive rate (FPR)
         FPR = FP/N = FP/(FP + TN) = 1 − TNR"""
@@ -496,6 +519,7 @@ class AccIndex:
         mian = self.tf.loc[["FP", "TN"], :].sum(axis=0)
         return licznik / mian
 
+    @handle_division_errors
     def _x1_fdr(self):
         """false discovery rate (FDR)
         FDR = FP/(FP + TP) = 1 − PPV"""
@@ -503,6 +527,7 @@ class AccIndex:
         mian = self.tf.loc[["FP", "TP"], :].sum(axis=0)
         return licznik / mian
 
+    @handle_division_errors
     def _x1_foRate(self):
         """false omission rate (FOR)
         FOR = FN/(FN + TN) = 1 − NPV"""
@@ -510,6 +535,7 @@ class AccIndex:
         mian = self.tf.loc[["FN", "TN"], :].sum(axis=0)
         return licznik / mian
 
+    @handle_division_errors
     def _x1_ts(self):
         """Threat score (TS) or critical success index (CSI)
         TS = TP/(TP + FN + FP)"""
@@ -517,6 +543,7 @@ class AccIndex:
         mian = self.tf.loc[["TP", "FN", "FP"], :].sum(axis=0)
         return licznik / mian
 
+    @handle_division_errors
     def _x1_mcc(self):
         """Matthews correlation coefficient (MCC)
         mcc = (TP*TN - FP*FN) / [(TP+FP) * (TP+FN) * (TN+FP) * (TN+FN)]^0.5
@@ -534,6 +561,7 @@ class AccIndex:
     # wskaźniki złożone - modern2. Są obliczne na podstawie
     # wskaźników z grupy 1 - modern1.
 
+    @handle_division_errors
     def _x2_pt(self):
         """Prevalence Threshold (PT)
         PT = {[TPR*(1 − TNR)]^0.5 + TNR − 1} / (TPR + TNR − 1)"""
@@ -548,6 +576,7 @@ class AccIndex:
         """
         return (self.tpr + self.tnr) / 2
 
+    @handle_division_errors
     def _x2_f1(self):
         """F1 score is the harmonic mean of precision and sensitivity
         f1 = 2*(PPV*TPR)/(PPV+TPR) = (2*TP)/(2*TP+FP+FN)
