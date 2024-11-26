@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import sys
 import copy
 import numpy as np
 import pandas as pd
@@ -311,9 +312,14 @@ class CrossMatrixValidator:
         if self.type_cross == 'full':
             data = data.iloc[:-1, :-1]
         # breakpoint() 
-        if self.map_labels:
-            data.columns = [self.map_labels[key] for key in data.columns]
-            data.index = [self.map_labels[key] for key in data.index]
+        try:
+            if self.map_labels:
+                data.columns = [self.map_labels[key] for key in data.columns]
+                data.index = [self.map_labels[key] for key in data.index]
+        except Exception:
+            m1 = "\n\tCheck json data (map_labels)!"
+            m2 = "\tClasses from this file do not match the data!!!\n"
+            sys.exit(f"{m1}\n{m2}")
 
         data_sq = CrossMatrixValidator._make_matrix_square(data, self.scheme)
         if self.type_cross == 'cross':
