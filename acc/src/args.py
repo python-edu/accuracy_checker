@@ -6,109 +6,27 @@ import argparse
 
 # local imports
 from acc.src.args_data.args_func import FormatHelp as FH
-from acc.src.args_data import args_func as afn
-from acc.src.subcommands import from_raw, from_cross_full, from_cross
-from acc.src.subcommands import from_cross_raw, from_binary, from_imgs
+from acc.src.args_data import help_info as info
+# from acc.src.args_data import args_func as afn
+# from acc.src.subcommands import from_raw, from_cross_full, from_cross
+# from acc.src.subcommands import from_cross_raw, from_binary, from_imgs
 
 # --
 
 description = FH(
     """The script checks the quality of classification:
         - creates or uses an existing cross matrix
-        - calculates accuracy metrics."""
+        - calculates accuracy metrics.
+
+Additional help:
+
+- `accuracy data help`: displays help about input data `*.csv`
+- `accuracy metrics help`: displays information about accuracy metrics
+    """
 ).txt
 
-
-info = FH(
-        """1. The definitions of the metrics are mainly based on the binary \
-        error matrix with the following symbols: TP true positive, TN true \
-        negative, FP false positive, FN false negative.
-
-2. Accuracy metrics classically used in remote sensing:
-  - OA (overall_accuracy):
-   -- OA = sum(TP) / (TP + TN + FP + FN)
-
-  -  PA (producer_accuracy):
-   -- PA = TP / (TP + FN)
-
-  -  UA (user_accuracy)
-     -- UA = TP / (TP + FP)
-
-  -  OME (omission errors / errors_of_omission):
-     -- OME = FN / (TP + FN)
-
-  -  CME (errors_of_commision):
-     -- CME = FP / (TP + FP)
-
-  -  NPV (negative predictive value):
-     -- NPV = TN/(TN + FN) = 1 − FOR
-
-3. Classification accuracy metrics found in contemporary scientific \
-publications (some metrics overlap with some of the metrics mentioned in \
-point 1).
-
-These metrics can be conventionally divided into simple metrics \
-(calculated directly from the TP, TN, FP and FN values) and complex metrics \
-(calculated using simple metrics).
-
-3.1. Simple metrics:
-
-   -   ACC (accuracy):
-      -- ACC = (TP+TN)/(P+N) = (TP+TN)/(TP+TN+FP+FN)
-
-   -  PPV (precision or positive predictive value):
-      -- PPV = TP / (TP + FP)
-
-   -  PPV (precision or positive predictive):
-      -- PPV = TP / (TP + FP)
-
-   -  TPR (sensitivity, recall, hit rate, or true positive rate):
-      -- TPR = TP/P = TP/(TP + FN) = 1 − FNR
-
-   -  TNR (specificity, selectivity or true negative rate):
-      -- TNR = TN/N = TN/(TN + FP) = 1 − FPR
-
-   -  NPV (negative predictive value):
-      -- NPV = TN/(TN + FN) = 1 − FOR
-
-   -  FNR (miss rate or false negative rate):
-      -- FNR = FN/P = FN/(FN + TP) = 1 − TPR
-
-   -  FPR (fall-out or false positive rate):
-      -- FPR = FP/N = FP/(FP + TN) = 1 − TNR
-
-   -  FDR (false discovery rate):
-      -- FDR = FP/(FP + TP) = 1 − PPV
-
-   -  FOR (false omission rate):
-      -- FOR = FN/(FN + TN) = 1 − NPV
-
-   -  TS / CSI (Threat score (TS) or critical success index (CSI)):
-      -- TS = TP/(TP + FN + FP
-
-   -  MCC (Matthews correlation coefficient):
-      -- mcc = (TP*TN - FP*FN) / [(TP+FP) * (TP+FN) * (TN+FP) * (TN+FN)]^0.5
-
-3.2. Complex metrics:
-   - PT (Prevalence Threshold):
-     -- PT = {[TPR*(1 − TNR)]^0.5 + TNR − 1} / (TPR + TNR − 1)
-
-   - BA (Balanced accuracy):
-     -- ba = (TPR + TNR)/2
-
-   - F1 score (is the harmonic mean of precision and sensitivity):
-     -- f1 = 2*(PPV*TPR)/(PPV+TPR) = (2*TP)/(2*TP+FP+FN)
-
-   - FM (Fowlkes–Mallows index):
-     -- fm = [(TP/(TP+FP))*(TP/(TP+FN))]^0.5 = (PPV * TPR)^0.5
-
-   - BM (informedness or Fowlkes–Mallows index):
-     -- bm = TPR + TNR - 1
-
-   - MK (markedness (MK) or deltaP):
-     -- mk = PPV + NPV - 1
-"""
-).txt
+# info_data = FH(info.info_data).txt
+# info_metrics = FH(info.info_metrics).txt
 # --
 
 
@@ -136,10 +54,10 @@ def parsuj_argumenty():
       ({'1': ''wheat', ...}); it will automatically search for the file \
       `path_ref.tif` (references)
     - path.shp path.tif path.json: three paths""").txt
-    parser.add_argument('path', nargs='+', type=str, help=txt) 
+    parser.add_argument('path', nargs='+', type=str, help=txt)
 
     # txt = FH("Path to data file: '*.csv' or image").txt
-    # parser.add_argument('-p2', '---path2', type=str, help=txt) 
+    # parser.add_argument('-p2', '---path2', type=str, help=txt)
 
     txt = FH(
         """By default, the script displays the results on the screen. This
@@ -183,10 +101,10 @@ def parsuj_argumenty():
     parser.add_argument("--report_data", help=txt, nargs='+', type=list,
                         default=default)
 
-    txt = FH("""Displays information (names and calculation formulas) about \
-            the calculated statistics.""").txt
-    parser.add_argument("-i", "--info", help=txt,
-                        action="store_true", default=False)
+    # txt = FH("""Displays information (names and calculation formulas) about \
+    #         the calculated statistics.""").txt
+    # parser.add_argument("-i", "--info", help=txt,
+    #                     action="store_true", default=False)
 
     txt = "Precision - number of decimal places."
     parser.add_argument("-p", "--precision", type=int, help=txt, default=4)
