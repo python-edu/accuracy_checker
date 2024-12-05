@@ -145,6 +145,9 @@ class CrossMatrixRecognizer:
     @staticmethod
     def is_raw(df: pd.DataFrame) -> bool:
         """Check if the DataFrame is in raw cross format."""
+        if isinstance(df, np.ndarray) and df.shape[0] == df.shape[1]:
+            return True
+
         columns_are_numbers = pd.to_numeric(df.columns, errors='coerce').notna()
         index_are_numbers = pd.to_numeric(df.index, errors='coerce').notna()
         result = all(columns_are_numbers) and all(index_are_numbers)
@@ -153,8 +156,8 @@ class CrossMatrixRecognizer:
     @staticmethod
     def is_cross(df: pd.DataFrame) -> bool:
         """Check if the DataFrame is in cross matrix format."""
-        is_full = CrossMatrixRecognizer.is_cross_full(df)
-        is_raw = CrossMatrixRecognizer.is_cross_raw(df)
+        is_full = CrossMatrixRecognizer.is_full(df)
+        is_raw = CrossMatrixRecognizer.is_raw(df)
         result = not is_full and (not is_raw)
         return result
 
