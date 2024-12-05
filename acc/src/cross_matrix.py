@@ -208,10 +208,13 @@ class CrossMatrix:
     def _generate_matrices(self):
         """Generates all confusion matrix variants."""
         all_classes = sorted(set(self.true_values))
-        tmp_cross = pd.crosstab(pd.Series(self.true_values, name='true'), pd.Series(self.predicted, name='predicted'), dropna=False)
+        tmp_cross = pd.crosstab(pd.Series(self.true_values, name='true'),
+                                pd.Series(self.predicted, name='predicted'),
+                                dropna=False
+                                )
         tmp_cross = tmp_cross.reindex(columns=all_classes, fill_value=0)
         self.cross_raw = tmp_cross.copy()
-        labels = range(tmp_cross.shape[1])
+        labels = range(tmp_cross.shape[0])
         self.cross_raw.columns = labels
         self.cross_raw.index = labels
         self.cross_raw.columns.name = 'predicted'
@@ -221,8 +224,12 @@ class CrossMatrix:
 
     def _add_labels(self, matrix):
         """Adds labels to rows and columns of the confusion matrix."""
-        row_labels = [self.map_labels.get(i, f'Unknown_{i}0') for i in matrix.index]
-        col_labels = [self.map_labels.get(i, f'Unknown_{i}0') for i in matrix.columns]
+        # breakpoint()
+        n=1
+        if max(matrix.index) > 9:
+            n=2
+        row_labels = [self.map_labels.get(i, f'Unknown_{i:0>{n}}') for i in matrix.index]
+        col_labels = [self.map_labels.get(i, f'Unknown_{i:0>{n}}') for i in matrix.columns]
         return matrix.rename(index=dict(zip(matrix.index, row_labels)), columns=dict(zip(matrix.columns, col_labels)))
 
     def _add_summaries(self, matrix):
@@ -234,6 +241,7 @@ class CrossMatrix:
 
     def __repr__(self):
         return self.cross_full.to_string(max_rows=5, max_cols=5) if self.cross_full is not None else 'Confusion matrix has not been generated yet.'
+
 
 class CrossMatrixValidator:
     """
@@ -248,10 +256,6 @@ class CrossMatrixValidator:
         cross (pd.DataFrame): Matrix with labels
         cross_full (pd.DataFrame): Matrix with labels and sums.
     """
-    pass
-    pass
-    pass
-    pass
 
     def __init__(self, data, map_labels: dict=None, label_prefix='cl', scheme='normal', type_cross=None):
         """
@@ -349,7 +353,7 @@ class CrossMatrixValidator:
         if self.type_cross == 'raw':
             prefix = self.label_prefix
             n = self.data.shape[0]
-            return {i: f'{prefix}_{i:0>2}' for i in range(1, n - 1)}
+            return {i: f'{prefix}_{i:0>2}' for i in range(1, n + 1)}
 
     def _remap_labels(self):
         """
@@ -398,7 +402,7 @@ class CrossMatrixValidator:
         """
         cross = self.cross_raw.copy()
         map_labels = self.map_labels
-        names = [map_labels[i] for i in range(1, cross.shape[0] - 1)]
+        names = [map_labels[i] for i in range(1, cross.shape[0] + 1)]
         cross.columns = names
         cross.index = names
         cross.columns.name = 'predicted'
