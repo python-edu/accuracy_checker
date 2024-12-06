@@ -1,15 +1,9 @@
 # -*- coding: utf-8-*-
 
-"""
-"""
 import argparse
 
 # local imports
 from acc.src.args_data.args_func import FormatHelp as FH
-from acc.src.args_data import help_info as info
-# from acc.src.args_data import args_func as afn
-# from acc.src.subcommands import from_raw, from_cross_full, from_cross
-# from acc.src.subcommands import from_cross_raw, from_binary, from_imgs
 
 # --
 
@@ -25,13 +19,8 @@ Additional help:
     """
 ).txt
 
-# info_data = FH(info.info_data).txt
-# info_metrics = FH(info.info_metrics).txt
-# --
-
 
 def parsuj_argumenty():
-    # parser = apk.MyParserWithDefaults(
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=description,
@@ -55,9 +44,6 @@ def parsuj_argumenty():
       `path_ref.tif` (references)
     - path.shp path.tif path.json: three paths""").txt
     parser.add_argument('path', nargs='+', type=str, help=txt)
-
-    # txt = FH("Path to data file: '*.csv' or image").txt
-    # parser.add_argument('-p2', '---path2', type=str, help=txt)
 
     txt = FH(
         """By default, the script displays the results on the screen. This
@@ -100,11 +86,6 @@ def parsuj_argumenty():
                'template_dir=templates']
     parser.add_argument("--report_data", help=txt, nargs='+', type=list,
                         default=default)
-
-    # txt = FH("""Displays information (names and calculation formulas) about \
-    #         the calculated statistics.""").txt
-    # parser.add_argument("-i", "--info", help=txt,
-    #                     action="store_true", default=False)
 
     txt = "Precision - number of decimal places."
     parser.add_argument("-p", "--precision", type=int, help=txt, default=4)
