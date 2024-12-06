@@ -14,6 +14,11 @@ from collections import Counter
 
 from acc.src.args_data import help_info as info
 
+# global variable
+imgs_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF']
+all_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF', '.shp', '.gpkg']
+
+
 
 class FormatHelp:
     """Klasa służy do sformatowania tekstu pomocy. Wywoływana jest, dla
@@ -289,7 +294,7 @@ def search_reference_file(path):
     return False
 
 
-def search_json_file(path):
+def search_json_file1(path):
     """Searches the data directory for a '*.json' file, which if present
     contains a class map. The file can have any name and should only be one
     - the first one found will be read."""
@@ -307,6 +312,44 @@ def search_json_file(path):
         map_labels = None
     return map_labels
     # ---
+
+
+
+def search_json_file(path):
+    """Searches the data directory for a '*.json' file, which if present
+    contains a class map. The file can have any name and should only be one
+    - the first one found will be read.
+    
+    Args:
+        path (str): Path to the directory to search for a JSON file.
+        
+    Returns:
+        dict or None: Dictionary containing the class map if a valid JSON
+                      file is found and parsed successfully, otherwise None.
+    """
+    path = Path(path).resolve()
+    json_file = next(path.glob("*.json"), None)
+
+    if json_file:
+        try:
+            with open(json_file) as f:
+                map_labels = json.load(f)
+                # Convert keys from str to int if possible
+                try:
+                    map_labels = {int(key): val for key, val in map_labels.items()}
+                except ValueError:
+                    pass
+                return map_labels
+        except (json.JSONDecodeError, OSError):
+            # Handle invalid JSON or file reading errors
+            return None
+
+    return None
+
+
+
+
+
 
 
 def paths_decoder(args):
@@ -337,8 +380,8 @@ def paths_decoder(args):
     - args.path exists and args.path3 exist: csv or image + json (classes)
     - other configurations return an error and end the script
     """
-    imgs_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF']
-    all_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF', '.shp', '.gpkg']
+    # imgs_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF']
+    # all_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF', '.shp', '.gpkg']
 
     if len(args.path) > 3:
         msg = f"\n\t{len(args.path)} paths entered - maximum 3 allowed.\n"
@@ -410,8 +453,8 @@ def paths_decoder(args):
 
 
 def args_validation(args, **kwargs):
-    imgs_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF']
-    all_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF', '.shp', '.gpkg']
+    # imgs_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF']
+    # all_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF', '.shp', '.gpkg']
 
     # Checks if `save` and `zip` are not specified at the same time: only
     # one of the options is allowed at a time
@@ -428,7 +471,7 @@ def args_validation(args, **kwargs):
     if hasattr(args, 'help_data') or hasattr(args, 'help_metrics'):
         return args
     
-    # only the path to the image was entered
+    # only the path to the image was entered, imgs_suffixes: gloabl variable
     if Path(args.path).suffix in imgs_suffixes and args.path2 is None:
         path = search_reference_file(args.path)
         if not path:
@@ -436,8 +479,9 @@ def args_validation(args, **kwargs):
             msg += "\t  no file with reference values found!!!"
             msg += "(*.shp, *.gpkg).\n"
             sys.exit(msg.format(args.path))
-        args.path2 = args.path
-        args.path = path
+        args.path2 = path
+        # args.path2 = args.path
+        # args.path = path
 
     root_dir = Path(args.path).parent
 
