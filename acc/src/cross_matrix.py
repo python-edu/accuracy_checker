@@ -1,133 +1,152 @@
-# Decompiled with PyLingual (https://pylingual.io)
-# Internal filename: /home/u1/03_Programowanie/03Python/skrypty/acc/acc/src/cross_matrix.py
-# Bytecode version: 3.11a7e (3495)
-# Source timestamp: 2024-11-30 15:34:56 UTC (1732980896)
-
-import sys
 import copy
 import numpy as np
 import pandas as pd
-predict_name = 'predicted'
-true_name = 'true'
+
+predict_name = "predicted"
+true_name = "true"
 
 
 class RawData:
     """
-    Stores classification results in a table with 2 columns:
-    - First column: true values (actual classes)
-    - Second column: predicted values (predicted classes)
+    Stores classification results in a table with two or three columns:
+    - Column 1: True values (actual classes).
+    - Column 2: Predicted values (predicted classes).
+    - (Optional) Column 3: Short labels or custom labels.
 
+    This class preprocesses the input data, validates it, and generates
+    mappings for class IDs to readable labels.
+
+    Attributes:
+        true_values (list[int]): List of true class IDs (numeric).
+        predicted (list[int]): List of predicted class IDs (numeric).
+        map_labels (dict): Mapping of class IDs to readable labels.
     """
 
-    def __init__(self, data, map_labels=None, default_label='cl'):
+    def __init__(self, data, map_labels=None, default_label="cl"):
         """
-        Input:
-           - Columns must be in order [true_values, predicted, (label)]
-           - Column names do not matter (data can be without column names)
-           - Data can be a list, tuple, numpy array, or pandas DataFrame
+        Initializes the RawData object with classification results.
 
-        |  true  | predicted |    |  true  | predicted | label |
-        |--------+-----------| or |--------+-----------+-------|
-        |  int   |    int    |    |   int  |    int    |  rye  | 
-        |  ...   |    ...    |    |   ...  |    ...    |  ...  | 
+        Input:
+           - Columns must be in order [true_values, predicted_values, (label)].
+           - Column names do not matter (data can be without column names).
+           - Data can be a list, tuple, numpy array, or pandas DataFrame.
+
+        Example input table:
+        |  true  | predicted |    |  true  | predicted |  label  |
+        |--------+-----------| or |--------+-----------+---------|
+        |   int  |    int    |    |   int  |    int    |   str   |
+        |  ...   |    ...    |    |   ...  |    ...    |   ...   |
 
         Args:
-            - data: Input data (list, tuple, numpy array, or DataFrame)
-            - map_labels: Dictionary mapping class IDs to class names
-            - default_label: Default prefix for class labels (e.g., "cl")
+            data: Input data in one of the following formats:
+                  - pandas DataFrame.
+                  - list or tuple of lists/tuples.
+                  - numpy array.
+            map_labels: (Optional) A dictionary mapping class IDs to custom
+                        labels. If not provided, labels are generated
+                        automatically.
+            default_label: (Optional) Prefix used for generating default
+                           labels. Defaults to "cl".
+
+        Raises:
+            ValueError: If the input data is not in the expected format.
         """
         df = self._prepare_dataframe(data)
         df = self._clean_data(df)
         self.true_values = df.iloc[:, 0].astype(int).tolist()
         self.predicted = df.iloc[:, 1].astype(int).tolist()
-        self.map_labels = self._generate_map_labels(df, map_labels, default_label)
+        self.map_labels = self._generate_map_labels(df,
+                                                    map_labels,
+                                                    default_label
+                                                    )
 
     def _prepare_dataframe(self, data):
         """
-        Converts input data to a pandas DataFrame and ensures it has 2 columns.
+        Converts input data into a pandas DataFrame and ensures it has
+        two or three columns.
 
         Args:
-            data: Input data (list, tuple, numpy array, or DataFrame)
+            data: Input data (DataFrame, list, tuple, or numpy array).
 
         Returns:
-            A pandas DataFrame with 2 columns.
+            pd.DataFrame: A DataFrame containing the processed data.
 
         Raises:
-            ValueError: If the input data does not have exactly 2 columns.
+            ValueError: If the input data does not have the correct number
+                        of columns.
         """
         if isinstance(data, pd.DataFrame):
             df = data.reset_index(drop=True)
         elif isinstance(data, (list, tuple, np.ndarray)):
             df = pd.DataFrame(data).T
         else:
-            raise ValueError('Data must be a DataFrame, list, tuple,                     or numpy array!')
+            raise ValueError(
+                "Input data must be a DataFrame, list, tuple, or numpy array!"
+            )
         if df.shape[1] not in [2, 3]:
-            raise ValueError('Data must have exactly 2 columns!')
+            raise ValueError("Input data must have exactly 2 or 3 columns!")
         return df
 
     def _clean_data(self, df):
         """
-        Cleans the data by converting columns to numbers and removing
-        invalid rows.
+        Cleans the input DataFrame by converting values to numeric types
+        and removing invalid rows.
 
         Args:
             df: A pandas DataFrame.
 
         Returns:
-            A cleaned DataFrame with numeric columns and no invalid rows.
+            pd.DataFrame: A cleaned DataFrame with valid numeric rows only.
         """
-        df.iloc[:, 0] = pd.to_numeric(df.iloc[:, 0], errors='coerce')
-        df.iloc[:, 1] = pd.to_numeric(df.iloc[:, 1], errors='coerce')
-
+        df.iloc[:, 0] = pd.to_numeric(df.iloc[:, 0], errors="coerce")
+        df.iloc[:, 1] = pd.to_numeric(df.iloc[:, 1], errors="coerce")
         df.dropna(inplace=True)
 
-        # removes rows for containing predicted values that are not in true
-        uniqe = set(df.iloc[:, 0])  # true
-        idx = df.iloc[:, 1].isin(uniqe)
-        df = df.loc[idx]
+        # Remove rows where predicted values are not in the set of true values
+        true_classes = set(df.iloc[:, 0])  # Unique true values
+        df = df[df.iloc[:, 1].isin(true_classes)]
         return df
 
     def _generate_map_labels(self, df, map_labels, default_label):
         """
-        Creates a map of class IDs to class labels.
+        Generates a mapping of class IDs to readable labels.
 
         Args:
-            - df: A cleaned DataFrame.
-            - map_labels: A dictionary provided by the user (optional).
-            - default_label: Default prefix for class labels.
+            df: A cleaned DataFrame.
+            map_labels: (Optional) Dictionary mapping class IDs to labels.
+            default_label: Default prefix for generating class labels.
 
         Returns:
-            A dictionary mapping class IDs to class labels.
+            dict: A dictionary mapping class IDs to labels.
         """
-        # all_classes = set(df.iloc[:, 0]).union(df.iloc[:, 1])
         all_classes = set(df.iloc[:, 0])
 
+        # Use the provided map_labels if available
         if map_labels is not None:
-            tmp = map_labels.copy()
-            map_labels = {key: tmp[key] for key in all_classes}
-            return map_labels
+            return {cls: map_labels[cls] for cls in all_classes}
 
-        # 3 columns: true, predict, short_label
+        # If a third column exists, use it as class labels
         if df.shape[1] == 3:
-            map_labels = dict(zip(df.iloc[:, 0], df.iloc[:, -1]))
-            return map_labels
+            return dict(zip(df.iloc[:, 0], df.iloc[:, -1]))
 
-
-        if max(all_classes) > 9:
-            n = 2
-        else:
-            n =1
-
-        map_labels = {cls: f'{default_label}_{cls:0>{n}}'
-                for cls in all_classes
-                      }
-        return map_labels
+        # Generate default labels
+        label_width = 2 if max(all_classes) > 9 else 1
+        return {
+            cls: f"{default_label}_{cls:0>{label_width}}"
+            for cls in all_classes
+        }
 
     def __repr__(self):
-        result = []
-        for cls, label in self.map_labels.items():
-            result.append(f'  {cls} -> {label}')
-        return '\n'.join(result)
+        """
+        Returns a string representation of the class-to-label mapping.
+
+        Returns:
+            str: A formatted string of class IDs and their labels.
+        """
+        return "\n".join(f"  {cls} -> {label}"
+                         for cls, label in self.map_labels.items()
+                         )
+
 
 class CrossMatrixRecognizer:
     """
@@ -148,8 +167,9 @@ class CrossMatrixRecognizer:
         if isinstance(df, np.ndarray) and df.shape[0] == df.shape[1]:
             return True
 
-        columns_are_numbers = pd.to_numeric(df.columns, errors='coerce').notna()
-        index_are_numbers = pd.to_numeric(df.index, errors='coerce').notna()
+        columns_are_numbers = pd.to_numeric(df.columns,
+                                            errors="coerce").notna()
+        index_are_numbers = pd.to_numeric(df.index, errors="coerce").notna()
         result = all(columns_are_numbers) and all(index_are_numbers)
         return result
 
@@ -171,21 +191,23 @@ class CrossMatrixRecognizer:
         result = correct_column_sums and correct_row_sums
         return result
 
+
 class CrossMatrix:
     """
     Generates confusion matrices for classification results.
 
-    Default layout of cross(confusion) matrix is:
-      - rows: True classes (true labels).
-      - columns: Predicted classes (predicted labels)
+    Default layout of the cross (confusion) matrix:
+      - Rows: True classes (true labels).
+      - Columns: Predicted classes (predicted labels).
 
     Attributes:
-        map_labels: Dictionary mapping class IDs to class names.
-        true_values: List of true class IDs.
-        predicted: List of predicted class IDs.
-        cross_raw: Confusion matrix as raw numbers (no labels or summaries).
-        cross: Confusion matrix with row and column descriptions.
-        cross_full: Confusion matrix with descriptions and summaries.
+        true_values (list[int]): List of true class IDs.
+        predicted (list[int]): List of predicted class IDs.
+        map_labels (dict): Dictionary mapping class IDs to class names.
+        cross_raw (pd.DataFrame): Confusion matrix with numeric values only.
+        cross (pd.DataFrame): Confusion matrix with row and column descriptions
+        cross_full (pd.DataFrame): Confusion matrix with row/column
+                                   descriptions and summary rows/columns.
     """
 
     def __init__(self, true_values, predicted, map_labels):
@@ -193,9 +215,9 @@ class CrossMatrix:
         Initializes the CrossMatrix object.
 
         Args:
-            map_labels: Dictionary {class_id: class_name, ...}.
-            true_values: List of true class IDs.
-            predicted: List of predicted class IDs.
+            true_values (list[int]): List of true class IDs.
+            predicted (list[int]): List of predicted class IDs.
+            map_labels (dict): Dictionary mapping class IDs to class names.
         """
         self.true_values = true_values
         self.predicted = predicted
@@ -206,70 +228,140 @@ class CrossMatrix:
         self._generate_matrices()
 
     def _generate_matrices(self):
-        """Generates all confusion matrix variants."""
+        """
+        Generates the three variants of the confusion matrix:
+        - cross_raw: Matrix with numeric values only.
+        - cross: Matrix with row and column descriptions.
+        - cross_full: Matrix with descriptions and summary rows/columns.
+        """
+        # Identify all classes from true values
         all_classes = sorted(set(self.true_values))
-        tmp_cross = pd.crosstab(pd.Series(self.true_values, name='true'),
-                                pd.Series(self.predicted, name='predicted'),
-                                dropna=False
-                                )
+
+        # Generate raw confusion matrix (numeric only)
+        tmp_cross = pd.crosstab(
+            pd.Series(self.true_values, name="true"),
+            pd.Series(self.predicted, name="predicted"),
+            dropna=False,
+        )
         tmp_cross = tmp_cross.reindex(columns=all_classes, fill_value=0)
+
+        # Save raw matrix
         self.cross_raw = tmp_cross.copy()
         labels = range(tmp_cross.shape[0])
         self.cross_raw.columns = labels
         self.cross_raw.index = labels
-        self.cross_raw.columns.name = 'predicted'
-        self.cross_raw.index.name = 'true'
+        self.cross_raw.columns.name = "predicted"
+        self.cross_raw.index.name = "true"
+
+        # Generate labeled and full matrices
         self.cross = self._add_labels(tmp_cross)
         self.cross_full = self._add_summaries(self.cross)
 
     def _add_labels(self, matrix):
-        """Adds labels to rows and columns of the confusion matrix."""
-        # breakpoint()
-        n=1
-        if max(matrix.index) > 9:
-            n=2
-        row_labels = [self.map_labels.get(i, f'Unknown_{i:0>{n}}') for i in matrix.index]
-        col_labels = [self.map_labels.get(i, f'Unknown_{i:0>{n}}') for i in matrix.columns]
-        return matrix.rename(index=dict(zip(matrix.index, row_labels)), columns=dict(zip(matrix.columns, col_labels)))
+        """
+        Adds labels to the rows and columns of the confusion matrix.
+
+        Args:
+            matrix (pd.DataFrame): A confusion matrix with numeric values only.
+
+        Returns:
+            pd.DataFrame: A matrix with row and column descriptions.
+        """
+        max_index_value = max(matrix.index)
+        label_width = 2 if max_index_value > 9 else 1
+
+        # Generate row and column labels
+        row_labels = [
+            self.map_labels.get(i, f"Unknown_{i:0>{label_width}}")
+            for i in matrix.index
+        ]
+        col_labels = [
+            self.map_labels.get(i, f"Unknown_{i:0>{label_width}}")
+            for i in matrix.columns
+        ]
+
+        # Rename rows and columns
+        return matrix.rename(
+            index=dict(zip(matrix.index, row_labels)),
+            columns=dict(zip(matrix.columns, col_labels)),
+        )
 
     def _add_summaries(self, matrix):
-        """Adds summary rows and columns to the confusion matrix."""
+        """
+        Adds summary rows and columns to the confusion matrix.
+
+        Args:
+            matrix (pd.DataFrame): A confusion matrix with row/column
+                                   descriptions.
+
+        Returns:
+            pd.DataFrame: A matrix with additional summary rows and columns.
+        """
         matrix_with_sums = matrix.copy()
-        matrix_with_sums.loc['sums'] = matrix_with_sums.sum(axis=0)
-        matrix_with_sums['sums'] = matrix_with_sums.sum(axis=1)
+
+        # Add summary row and column
+        matrix_with_sums.loc["sums"] = matrix_with_sums.sum(axis=0)
+        matrix_with_sums["sums"] = matrix_with_sums.sum(axis=1)
+
         return matrix_with_sums
 
     def __repr__(self):
-        return self.cross_full.to_string(max_rows=5, max_cols=5) if self.cross_full is not None else 'Confusion matrix has not been generated yet.'
+        """
+        Returns a string representation of the full confusion matrix.
+
+        Returns:
+            str: A formatted string of the confusion matrix or a placeholder
+                 message if the matrix has not been generated.
+        """
+        return (
+            self.cross_full.to_string(max_rows=5, max_cols=5)
+            if self.cross_full is not None
+            else "Confusion matrix has not been generated yet."
+        )
 
 
 class CrossMatrixValidator:
     """
     Validates and processes a cross matrix.
 
+    This class identifies the type of the matrix (raw, cross, or full) and
+    converts it into different standardized forms, including labeled and
+    full matrices with sums.
+
     Attributes:
-        data (pd.DataFrame): The original cross matrix (raw, cross, or full)
-        type_cross (str): Detected type of the matrix ('raw', 'cross'
-             or 'full')
-        cross_raw (pd.DataFrame): Processed square matrix without labels
-             or sums
-        cross (pd.DataFrame): Matrix with labels
-        cross_full (pd.DataFrame): Matrix with labels and sums.
+        data (pd.DataFrame): The original input matrix.
+        type_cross (str): Detected type of the matrix ('raw', 'cross',
+                          or 'full').
+        map_labels (dict): Mapping of numerical labels to string labels.
+        label_prefix (str): Prefix for auto-generated labels.
+        cross_raw (pd.DataFrame): Square numeric matrix without labels or sums.
+        cross (pd.DataFrame): Matrix with row/column labels.
+        cross_full (pd.DataFrame): Matrix with labels and summary rows/columns.
+        cross_as (pd.DataFrame): Asymmetric cross matrix if applicable.
+        cross_full_as (pd.DataFrame): Full asymmetric cross matrix with sums.
     """
 
-    def __init__(self, data, map_labels: dict=None, label_prefix='cl', scheme='normal', type_cross=None):
+    def __init__(
+        self,
+        data,
+        map_labels: dict = None,
+        label_prefix="cl",
+        scheme="normal",
+        type_cross=None,
+    ):
         """
-        Initializes the validator with the input data and optional parameters.
+        Initializes the CrossMatrixValidator object with input data.
 
         Args:
-            data: The cross matrix, which can be a list of lists, np.array,
-                   or pd.DataFrame.
-            map_labels (dict, optional): Optional mapping for labels.
-            label_prefix (str): Prefix for generating column and row labels
-                   (e.g., 'cl' -> 'cl_01').
+            data: The input cross matrix. Can be a list of lists, numpy array,
+                  or pandas DataFrame.
+            map_labels (dict, optional): Optional mapping of numerical labels
+                                         to string labels.
+            label_prefix (str): Prefix for auto-generated labels
+                                (e.g., 'cl_01').
             scheme (str): Layout of rows and columns ('normal' or 'reverse').
-            type_cross (str, optional): Predefined matrix type
-                   ('raw', 'cross', or 'full').
+            type_cross (str, optional): Predefined type of the matrix
+                                        ('raw', 'cross', or 'full').
         """
         self.scheme = scheme
         self.data = self._enter_data(data)
@@ -277,32 +369,39 @@ class CrossMatrixValidator:
         self.label_prefix = label_prefix
         self.type_cross = type_cross if type_cross else self._detect_type()
         self.cross_raw = None
-        # self.cross_raw_sq = None
-        # `_as` means `asymmetric`
         self.cross_as = None
         self.cross = None
         self.cross_full_as = None
         self.cross_full = None
         self._process_matrices()
-        # breakpoint()
 
     def __repr__(self):
-        return f'Type_cross: {self.type_cross}\nMap_labels: {self.map_labels}'
+        """
+        Returns a string representation of the CrossMatrixValidator object.
+
+        Returns:
+            str: A summary of the detected type and label mapping.
+        """
+        return f"Type_cross: {self.type_cross}\nMap_labels: {self.map_labels}"
 
     def _process_matrices(self):
         """
         Processes the input data into different matrix forms.
+
+        Depending on the detected type (raw, cross, or full), the method
+        generates standardized forms of the matrix.
         """
         self.map_labels = self._create_map_labels()
-        if self.type_cross == 'raw':
+
+        if self.type_cross == "raw":
             self.cross_raw = self.data.copy()
             self._cross_from_raw()
             self._full_from_cross()
-        elif self.type_cross == 'cross':
+        elif self.type_cross == "cross":
             self._remap_labels()
             self._raw_from_cross()
             self._full_from_cross()
-        elif self.type_cross == 'full':
+        elif self.type_cross == "full":
             self._remap_labels()
             self._cross_from_full()
             self._raw_from_cross()
@@ -313,21 +412,26 @@ class CrossMatrixValidator:
         the scheme.
 
         Args:
-            data: Input data, which can be a list, np.array, or pd.DataFrame.
+            data: Input data in a list, numpy array, or pandas DataFrame
+                  format.
 
         Returns:
             pd.DataFrame: Adjusted DataFrame with integer values.
         """
         data = copy.deepcopy(data)
+
         if isinstance(data, (list, tuple, np.ndarray)):
             data = pd.DataFrame(data)
             data.columns = range(data.shape[1])
             data.index = range(data.shape[0])
-            self.type_cross = 'raw'
-        if self.scheme == 'reverse':
+            self.type_cross = "raw"
+
+        if self.scheme == "reverse":
             data = data.T
-        data.columns.name = 'predicted'
-        data.index.name = 'true'
+
+        data.columns.name = "predicted"
+        data.index.name = "true"
+
         return data.astype(int)
 
     def _detect_type(self) -> str:
@@ -335,13 +439,13 @@ class CrossMatrixValidator:
         Detects the type of the input matrix.
 
         Returns:
-            str: The type ('raw', 'cross', 'full').
+            str: One of 'raw', 'cross', or 'full'.
         """
         if CrossMatrixRecognizer.is_raw(self.data):
-            return 'raw'
+            return "raw"
         if CrossMatrixRecognizer.is_full(self.data):
-            return 'full'
-        return 'cross'
+            return "full"
+        return "cross"
 
     def _create_map_labels(self) -> dict:
         """
@@ -352,49 +456,49 @@ class CrossMatrixValidator:
         """
         if self.map_labels is not None:
             return self.map_labels
-        if self.type_cross == 'raw':
+
+        if self.type_cross == "raw":
             prefix = self.label_prefix
             n = self.data.shape[0]
-            k = 1
-            if n > 9:
-                k=2
-            return {i: f'{prefix}_{i:0>{k}}' for i in range(1, n + 1)}
+            label_width = 2 if n > 9 else 1
+            return {i: f"{prefix}_{i:0>{label_width}}" for i in range(1, n + 1)
+                    }
 
     def _remap_labels(self):
         """
-        Remaps labels in the data using the mapping provided.
+        Remaps numerical labels in the data to string labels using the mapping.
         """
         data = self.data.copy()
 
-        if self.type_cross == 'full':
+        if self.type_cross == "full":
             data = data.iloc[:-1, :-1]
+
         try:
             if self.map_labels:
                 data.columns = [self.map_labels[key] for key in data.columns]
                 data.index = [self.map_labels[key] for key in data.index]
-        except Exception:
-            m1 = '\n\tCheck json data (map_labels)!'
-            m2 = '\tClasses from this file do not match the data!!!\n'
-            sys.exit(f'{m1}\n{m2}')
+        except KeyError:
+            raise ValueError("Provided labels do not match the data classes.")
 
         data_sq = CrossMatrixValidator._make_matrix_square(data, self.scheme)
 
-        if self.type_cross == 'cross':
+        if self.type_cross == "cross":
             self.cross_as = data
             self.cross = data_sq
-        elif self.type_cross == 'full':
+        elif self.type_cross == "full":
             self.cross_full_as = self._add_sums_cols_rows(data)
             self.cross_full = self._add_sums_cols_rows(data_sq)
 
     def _raw_from_cross(self):
         """
-        Creates a square version of the raw matrix without labels or sums.
+        Creates a square numeric version of the raw matrix without
+        labels or sums.
         """
         cross_raw = self.cross.copy()
         cross_raw.index = range(len(cross_raw.index))
         cross_raw.columns = range(len(cross_raw.columns))
-        cross_raw.columns.name = 'predicted'
-        cross_raw.index.name = 'true'
+        cross_raw.columns.name = "predicted"
+        cross_raw.index.name = "true"
         self.cross_raw = cross_raw
 
     def _full_from_cross(self):
@@ -406,21 +510,22 @@ class CrossMatrixValidator:
 
     def _cross_from_raw(self):
         """
-        Creates a labeled cross matrix from a raw matrix.
+        Creates a labeled cross matrix from a raw numeric matrix.
         """
         cross = self.cross_raw.copy()
         map_labels = self.map_labels
         names = [map_labels[i] for i in range(1, cross.shape[0] + 1)]
         cross.columns = names
         cross.index = names
-        cross.columns.name = 'predicted'
-        cross.index.name = 'true'
+        cross.columns.name = "predicted"
+        cross.index.name = "true"
         self.cross_as = cross
         self.cross = cross
 
     def _cross_from_full(self):
         """
-        Extracts the cross matrix from a full matrix by removing sums.
+        Extracts the cross matrix from a full matrix by removing summary
+        rows and columns.
         """
         self.cross_as = self.cross_full_as.iloc[:-1, :-1]
         self.cross = self.cross_full.iloc[:-1, :-1]
@@ -435,10 +540,10 @@ class CrossMatrixValidator:
             scheme (str): Layout scheme ('normal' or 'reverse').
 
         Returns:
-            pd.DataFrame: A square matrix.
+            pd.DataFrame: A square numeric matrix.
         """
         matrix = matrix.copy()
-        if scheme == 'normal':
+        if scheme == "normal":
             matrix = matrix.reindex(columns=matrix.index, fill_value=0)
         else:
             matrix = matrix.reindex(index=matrix.columns, fill_value=0)
@@ -453,11 +558,11 @@ class CrossMatrixValidator:
             df (pd.DataFrame): Input DataFrame.
 
         Returns:
-            pd.DataFrame: DataFrame with sums added.
+            pd.DataFrame: A matrix with summary rows and columns.
         """
         df = df.copy()
-        df.loc[:, 'sums'] = df.sum(axis=1)
-        df.loc['sums', :] = df.sum(axis=0)
-        df.columns.name = 'predicted'
-        df.index.name = 'true'
+        df.loc[:, "sums"] = df.sum(axis=1)
+        df.loc["sums", :] = df.sum(axis=0)
+        df.columns.name = "predicted"
+        df.index.name = "true"
         return df.astype(int)
