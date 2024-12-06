@@ -213,138 +213,188 @@ class FormatHelp:
 
 
 
-def check_file_path(path: str) -> Path:
-    if not Path(path).is_file():
-        # raise argparse.ArgumentTypeError(f"`{path}` is not a valid file path.")
-        msg = f"\n  `{path}` is not a valid file path.\n"
-        sys.exit(msg)
-    else:
-        return str(Path(path).resolve())
-
-
-
-
-def check_dir(path_csv: str, out_dir: str) -> str:
-    """Building a directory for saving results:
-        - by default it creates a new directory inside the directory with
-          the data file. The name of the new directory is the name of the
-          data file with the 'results' extension, e.g.
-          cross_full.csv -> cross_full_results
-        - if a directory name is given, it creates a new directory inside
-          the data directory
-        - if a directory path is given, it creates a new directory from
-          this path
+def check_file_path(path: str) -> str:
+    """
+    Validates the existence of a file at the given path.
 
     Args:
-     - path_csv: str, path to input data file '*.csv'
-     - out_dir:  str, nazwa lub path katalogu wyjściowego.
+        path (str): Path to the file to validate.
+
+    Returns:
+        str: The absolute, resolved path to the file.
+
+    Raises:
+        SystemExit: If the path does not point to an existing file.
+    """
+    path_obj = Path(path)
+    if not path_obj.is_file():
+        msg = f"\n  `{path}` is not a valid file path.\n"
+        sys.exit(msg)
+
+    return str(path_obj.resolve())
+
+
+def check_dir(path_csv: str, out_dir: str = None) -> str:
+    """
+    Determines or creates an output directory for saving results.
+
+    Rules for output directory:
+        - If `out_dir` is None, a directory is created in the same location
+          as the `path_csv` file, with the name `<file_name>_results`.
+        - If `out_dir` is a name, it is treated as a directory name relative
+          to the directory containing the `path_csv` file.
+        - If `out_dir` is an absolute path, it is used directly.
+
+    Args:
+        path_csv (str): Path to the input CSV file.
+        out_dir (str, optional): Name or path for the output directory.
+
+    Returns:
+        str: The absolute, resolved path to the output directory.
     """
     path_csv = Path(path_csv).resolve()
-    # breakpoint()
+
     if out_dir is None:
+        # Default directory name: <file_name>_results
         name = f"{path_csv.stem}_results"
         out_dir = path_csv.with_name(name)
+    else:
+        # Convert out_dir to a Path object
+        out_dir = Path(out_dir)
 
-    out_dir = Path(out_dir)
-    # użytkownik wpisał nazwę
-    if not out_dir.is_absolute():
-        out_dir = path_csv.with_name(out_dir.name)
+        # If out_dir is a relative path, resolve it relative to the CSV file
+        if not out_dir.is_absolute():
+            out_dir = path_csv.with_name(out_dir.name)
 
-    out_dir = out_dir.resolve()
-    return str(out_dir)
+    return str(out_dir.resolve())
 
 
-def parse_report_data(data: list) -> dict:
-    """Args:
-    - data: ['key=val', 'key=val' ...]
+def parse_report_data(data: list[str]) -> dict:
     """
-    report_args = dict([item.split("=") for item in data])
+    Parses key-value pairs from a list of strings into a dictionary.
+
+    Args:
+        data (list[str]): A list of strings, each formatted as "key=value".
+
+    Returns:
+        dict: A dictionary where keys and values are extracted from the input.
+
+    Raises:
+        ValueError: If any string in the list does not contain an '=' character.
+    """
+    report_args = dict(item.split("=", 1) for item in data)
     return report_args
 
 
-def detects_separator(path: str):
-    """Automatically detects column separator and decimal separator in
-    csv file.
+
+
+
+def detects_separator(path: str) -> str:
+    """
+    Automatically detects the column separator in a CSV file.
+
+    Supported separators:
+        - Tab (`\\t`)
+        - Semicolon (`;`)
+        - Comma (`,`)
+
     Args:
-        - path: str, path to '*.csv' file (crossmatrix)
+        path (str): Path to the CSV file.
+
     Returns:
-        - column_sep: str, ',' or ';' or '\t'
+        str: Detected column separator (`\\t`, `;`, or `,`).
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        ValueError: If no valid separator is detected.
     """
     separators = ['\t', ';', ',']
-    with open(path) as f:
-        test = [f.readline() for _ in range(3)]
-    test = [line.replace('\n', '') for line in test]
-    test = ''.join(test)
-    counts_all = Counter(test)
-    counts_sep = [(key, counts_all[key]) for key in separators]
-    column_sep = max(counts_sep, key=lambda item: item[1])
+    try:
+        with open(path, 'r') as file:
+            # Read the first three lines of the file
+            lines = [file.readline() for _ in range(3)]
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File not found: {path}")
+
+    # Combine lines into a single string and count separator occurrences
+    combined_text = ''.join(line.strip() for line in lines)
+    counts = Counter(combined_text)
+    separator_counts = [(sep, counts[sep]) for sep in separators]
+
+    # Return the separator with the highest count
+    column_sep = max(separator_counts, key=lambda item: item[1])
+    if column_sep[1] == 0:
+        raise ValueError(f"No valid separator detected in file: {path}")
+
     return column_sep[0]
 
 
-def search_reference_file(path):
+def search_reference_file(path: str) -> str | bool:
+    """
+    Searches for a reference file related to the given file.
+
+    Supported file extensions:
+        - `.tif`, `.tiff`
+        - `.shp`, `.gpkg`
+
+    Args:
+        path (str): Path to the base file.
+
+    Returns:
+        str: Absolute path to the reference file if found.
+        bool: False if no reference file is found.
+    """
     suffix_list = ['.tif', '.tiff', '.TIF', '.TIFF', '.shp', '.gpkg']
-    folder = Path(path).resolve().parent
-    name = Path(path).stem
-    items = [f'{name}_ref{suffix}' for suffix in suffix_list]
-    
-    for it in items:
-        tmp = folder / it
-        if tmp.is_file():
-            return str(tmp.resolve())
+    base_folder = Path(path).resolve().parent
+    base_name = Path(path).stem
+    potential_files = [base_folder / f"{base_name}_ref{ext}" for ext in suffix_list]
+
+    # Check if any of the potential reference files exist
+    for ref_file in potential_files:
+        if ref_file.is_file():
+            return str(ref_file.resolve())
+
     return False
 
 
-def search_json_file1(path):
-    """Searches the data directory for a '*.json' file, which if present
-    contains a class map. The file can have any name and should only be one
-    - the first one found will be read."""
-    path = Path(path).resolve()
-    path = next((path.glob('*.json')), False)
-    if path:
-        with open(path) as f:
-            map_labels = json.load(f)
-            # converting keys from str to int type
-            try:
-                map_labels = {int(key): val for key, val in map_labels.items()}
-            except Exception:
-                pass
-    else:
-        map_labels = None
-    return map_labels
-    # ---
+def search_json_file(path: str) -> dict | None:
+    """
+    Searches for a JSON file in the given directory.
 
+    The JSON file is expected to contain a class map. If found, the first
+    matching file is loaded. Keys in the JSON are converted to integers
+    if possible.
 
-
-def search_json_file(path):
-    """Searches the data directory for a '*.json' file, which if present
-    contains a class map. The file can have any name and should only be one
-    - the first one found will be read.
-    
     Args:
         path (str): Path to the directory to search for a JSON file.
-        
+
     Returns:
-        dict or None: Dictionary containing the class map if a valid JSON
-                      file is found and parsed successfully, otherwise None.
+        dict: The class map loaded from the JSON file.
+        None: If no valid JSON file is found or parsing fails.
+
+    Raises:
+        OSError: If there are issues reading the JSON file.
     """
     path = Path(path).resolve()
+
+    # Find the first JSON file in the directory
     json_file = next(path.glob("*.json"), None)
 
     if json_file:
         try:
-            with open(json_file) as f:
-                map_labels = json.load(f)
-                # Convert keys from str to int if possible
+            with open(json_file, 'r') as file:
+                data = json.load(file)
+                # Attempt to convert keys to integers
                 try:
-                    map_labels = {int(key): val for key, val in map_labels.items()}
-                except ValueError:
-                    pass
-                return map_labels
+                    return {int(key): value for key, value in data.items()}
+                except (ValueError, TypeError):
+                    return data
         except (json.JSONDecodeError, OSError):
-            # Handle invalid JSON or file reading errors
             return None
 
     return None
+
+
 
 
 
