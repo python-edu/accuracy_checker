@@ -277,12 +277,14 @@ class CrossMatrixValidator:
         self.label_prefix = label_prefix
         self.type_cross = type_cross if type_cross else self._detect_type()
         self.cross_raw = None
-        self.cross_raw_sq = None
+        # self.cross_raw_sq = None
+        # `_as` means `asymmetric`
+        self.cross_as = None
         self.cross = None
-        self.cross_sq = None
+        self.cross_full_as = None
         self.cross_full = None
-        self.cross_full_sq = None
         self._process_matrices()
+        # breakpoint()
 
     def __repr__(self):
         return f'Type_cross: {self.type_cross}\nMap_labels: {self.map_labels}'
@@ -353,13 +355,17 @@ class CrossMatrixValidator:
         if self.type_cross == 'raw':
             prefix = self.label_prefix
             n = self.data.shape[0]
-            return {i: f'{prefix}_{i:0>2}' for i in range(1, n + 1)}
+            k = 1
+            if n > 9:
+                k=2
+            return {i: f'{prefix}_{i:0>{k}}' for i in range(1, n + 1)}
 
     def _remap_labels(self):
         """
         Remaps labels in the data using the mapping provided.
         """
         data = self.data.copy()
+
         if self.type_cross == 'full':
             data = data.iloc[:-1, :-1]
         try:
@@ -370,19 +376,21 @@ class CrossMatrixValidator:
             m1 = '\n\tCheck json data (map_labels)!'
             m2 = '\tClasses from this file do not match the data!!!\n'
             sys.exit(f'{m1}\n{m2}')
+
         data_sq = CrossMatrixValidator._make_matrix_square(data, self.scheme)
+
         if self.type_cross == 'cross':
-            self.cross = data
-            self.cross_sq = data_sq
+            self.cross_as = data
+            self.cross = data_sq
         elif self.type_cross == 'full':
-            self.cross_full = self._add_sums_cols_rows(data)
-            self.cross_full_sq = self._add_sums_cols_rows(data_sq)
+            self.cross_full_as = self._add_sums_cols_rows(data)
+            self.cross_full = self._add_sums_cols_rows(data_sq)
 
     def _raw_from_cross(self):
         """
         Creates a square version of the raw matrix without labels or sums.
         """
-        cross_raw = self.cross_sq.copy()
+        cross_raw = self.cross.copy()
         cross_raw.index = range(len(cross_raw.index))
         cross_raw.columns = range(len(cross_raw.columns))
         cross_raw.columns.name = 'predicted'
@@ -393,8 +401,8 @@ class CrossMatrixValidator:
         """
         Creates the full cross matrix with sums added to rows and columns.
         """
+        self.cross_full_as = self._add_sums_cols_rows(self.cross_as)
         self.cross_full = self._add_sums_cols_rows(self.cross)
-        self.cross_full_sq = self._add_sums_cols_rows(self.cross_sq)
 
     def _cross_from_raw(self):
         """
@@ -407,15 +415,15 @@ class CrossMatrixValidator:
         cross.index = names
         cross.columns.name = 'predicted'
         cross.index.name = 'true'
+        self.cross_as = cross
         self.cross = cross
-        self.cross_sq = cross
 
     def _cross_from_full(self):
         """
         Extracts the cross matrix from a full matrix by removing sums.
         """
+        self.cross_as = self.cross_full_as.iloc[:-1, :-1]
         self.cross = self.cross_full.iloc[:-1, :-1]
-        self.cross_sq = self.cross_full_sq.iloc[:-1, :-1]
 
     @staticmethod
     def _make_matrix_square(matrix: pd.DataFrame, scheme: str) -> pd.DataFrame:
