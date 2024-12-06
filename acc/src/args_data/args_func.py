@@ -345,7 +345,7 @@ def paths_decoder(args):
         sys.exit(msg)
 
     paths = args.path[:]
-
+    
     # first check if there is a request to display additional help!!!
     if 'data' in paths and 'help' in paths:
         setattr(args, 'help_data', True)
@@ -402,18 +402,16 @@ def paths_decoder(args):
             m3 = "a '*.tif' image.\n"
             msg = f"{m1}\n{m2} {m3}"
             sys.exit(msg)
+        else:
+            msg = "\n\tWprowadzony argument nie spełnia wymagań skryptu\n"
+            sys.exit(msg)
+
     return args
 
 
 def args_validation(args, **kwargs):
     imgs_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF']
     all_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF', '.shp', '.gpkg']
-
-    # if args.info:
-    #     print(kwargs.get('info', 'no information'))
-    #     sys.exit(' ')
-    # else:
-    #     delattr(args, 'info')
 
     # Checks if `save` and `zip` are not specified at the same time: only
     # one of the options is allowed at a time
@@ -423,16 +421,21 @@ def args_validation(args, **kwargs):
         msg = " ".join(line.strip() for line in msg.splitlines())
         msg = textwrap.fill(msg, width=120, subsequent_indent='  ')
         sys.exit(msg+'\n')
-
+    
     # read and sort the paths or additional help
     args = paths_decoder(args)
 
     if hasattr(args, 'help_data') or hasattr(args, 'help_metrics'):
         return args
-
+    
     # only the path to the image was entered
     if Path(args.path).suffix in imgs_suffixes and args.path2 is None:
         path = search_reference_file(args.path)
+        if not path:
+            msg = "\n\tFor file:\n\t  {}\n"
+            msg += "\t  no file with reference values found!!!"
+            msg += "(*.shp, *.gpkg).\n"
+            sys.exit(msg.format(args.path))
         args.path2 = args.path
         args.path = path
 
@@ -515,15 +518,15 @@ def remove_unnecessary_args(args):
     if not args.reversed:
         delattr(args, 'reversed')
 
-    if hasattr(args, 'help_data') or hasattr(args, 'help_metrics'):
-        keys = ('help_data', 'help_metrics')
-        att = {key: getattr(args, key) for key in keys if hasattr(args, key)}
+    # if hasattr(args, 'help_data') or hasattr(args, 'help_metrics'):
+    #     keys = ('help_data', 'help_metrics')
+    #     att = {key: getattr(args, key) for key in keys if hasattr(args, key)}
 
-        for key in vars(args).keys():
-            delattr(args, key)
+    #     for key in vars(args).keys():
+    #         delattr(args, key)
 
-        for key, val in att.items():
-            setattr(args, key, val)
+    #     for key, val in att.items():
+    #         setattr(args, key, val)
 
     return args
 
