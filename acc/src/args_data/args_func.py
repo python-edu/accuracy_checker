@@ -5,7 +5,6 @@
 import sys
 import json
 import re
-import argparse
 import textwrap
 from pathlib import Path
 from collections import Counter
@@ -15,9 +14,9 @@ from collections import Counter
 from acc.src.args_data import help_info as info
 
 # global variable
-imgs_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF']
-all_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF', '.shp', '.gpkg']
-
+vector_suffixes = [".shp", ".gpkg"]
+imgs_suffixes = [".tiff", ".tif", ".TIF", ".TIFF"]
+all_suffixes = imgs_suffixes + vector_suffixes
 
 
 class FormatHelp:
@@ -39,11 +38,8 @@ class FormatHelp:
         # join groups
         self.txt = "\n".join(self.groups)
 
-    # ---
-
     def __repr__(self):
         return self.txt
-    # ---
 
     def _split(self, lines: list) -> dict:
         result = []
@@ -93,8 +89,6 @@ class FormatHelp:
 
         return result
 
-    # ---
-
     def _format_groups(self, groups: list[dict], n, width):
         res = []
         for gr in groups:
@@ -113,8 +107,6 @@ class FormatHelp:
 
             res.append(txt)
         return res
-
-    # ---
 
     def _format_numerowany(self, txt, n, width):
         """Args:
@@ -137,8 +129,6 @@ class FormatHelp:
 
         txt = "\n".join(txt)
         return txt
-
-    # ---
 
     def _format_list(self, txt, n, width):
         """Args:
@@ -163,10 +153,9 @@ class FormatHelp:
         # wcina o n*' ' linie
         txt = textwrap.indent(txt,
                               n * " ",
-                              predicate=lambda line: line.startswith("-"))
+                              predicate=lambda line: line.startswith("-")
+                              )
         return txt
-
-    # ---
 
     def _format_sublist(self, txt, n, width):
         """Args:
@@ -191,16 +180,12 @@ class FormatHelp:
         txt = txt.replace("--", "")
         return txt
 
-    # ---
-
     def _format_opis(self, opis, width):
         opis = [line.strip() for line in opis.splitlines()]
         opis = [" ".join(line.split()) for line in opis]
         opis = " ".join(opis)
         opis = textwrap.fill(opis, width=width, subsequent_indent=(3) * " ")
         return opis
-
-    # ---
 
     def _format_table(self, table, n):
         table = [line.strip() for line in table.splitlines()]
@@ -209,8 +194,6 @@ class FormatHelp:
         table = "\n".join(table)
         # table = textwrap.fill(table, width=width)
         return table
-
-
 
 
 def check_file_path(path: str) -> str:
@@ -280,13 +263,11 @@ def parse_report_data(data: list[str]) -> dict:
         dict: A dictionary where keys and values are extracted from the input.
 
     Raises:
-        ValueError: If any string in the list does not contain an '=' character.
+        ValueError: If any string in the list does not contain
+                    an '=' character.
     """
     report_args = dict(item.split("=", 1) for item in data)
     return report_args
-
-
-
 
 
 def detects_separator(path: str) -> str:
@@ -308,16 +289,16 @@ def detects_separator(path: str) -> str:
         FileNotFoundError: If the file does not exist.
         ValueError: If no valid separator is detected.
     """
-    separators = ['\t', ';', ',']
+    separators = ["\t", ";", ","]
     try:
-        with open(path, 'r') as file:
+        with open(path, "r") as file:
             # Read the first three lines of the file
             lines = [file.readline() for _ in range(3)]
     except FileNotFoundError:
         raise FileNotFoundError(f"File not found: {path}")
 
     # Combine lines into a single string and count separator occurrences
-    combined_text = ''.join(line.strip() for line in lines)
+    combined_text = "".join(line.strip() for line in lines)
     counts = Counter(combined_text)
     separator_counts = [(sep, counts[sep]) for sep in separators]
 
@@ -344,10 +325,11 @@ def search_reference_file(path: str) -> str | bool:
         str: Absolute path to the reference file if found.
         bool: False if no reference file is found.
     """
-    suffix_list = ['.tif', '.tiff', '.TIF', '.TIFF', '.shp', '.gpkg']
+    suffix_list = [".tif", ".tiff", ".TIF", ".TIFF", ".shp", ".gpkg"]
     base_folder = Path(path).resolve().parent
     base_name = Path(path).stem
-    potential_files = [base_folder / f"{base_name}_ref{ext}" for ext in suffix_list]
+    potential_files = ([base_folder / f"{base_name}_ref{ext}" for
+                        ext in suffix_list])
 
     # Check if any of the potential reference files exist
     for ref_file in potential_files:
@@ -382,7 +364,7 @@ def search_json_file(path: str) -> dict | None:
 
     if json_file:
         try:
-            with open(json_file, 'r') as file:
+            with open(json_file, "r") as file:
                 data = json.load(file)
                 # Attempt to convert keys to integers
                 try:
@@ -395,173 +377,187 @@ def search_json_file(path: str) -> dict | None:
     return None
 
 
-
-
-
-
-
-
-
 def paths_decoder(args):
-    """The path argument is a list of paths from 1 to 3. The function
-    supports various path configurations, e.g.:
-     - ['*.csv'], [image], [reference, image], ,
-     - [reference, image, json_data], [image, json_data].
-
-    The function sets one to three paths:
-     - args.path
-     - args.path2
-     - args.path3
-
-    This additional argument captures values that cause additional
-    information (help) to be displayed instead of running the script.
-
-    The args.path setting is important for further processing. If:
-    - only args.path exists: this means that csv or images data is entered
-    - args.path exists and args.path2 is None: path is the path to the image
-      file after classification, the automat will try to find a matching
-      reference file
-    - args.path exists and args.path2 is not None: both paths for image
-      processing are present: the first is the reference, the second is the
-      image after classification
-    - args.path exists, args.path2 is None and args.path3 is a json file:
-      args.path is the path to the image after classification and the automat
-      should search for reference data
-    - args.path exists and args.path3 exist: csv or image + json (classes)
-    - other configurations return an error and end the script
     """
-    # imgs_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF']
-    # all_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF', '.shp', '.gpkg']
+    Decodes and validates paths provided as arguments.
 
+    The function supports 1 to 3 paths, handling various configurations:
+    - Single path:
+        - '*.csv' file sets `args.path`.
+        - '*.tif' image sets `args.path` and searches for reference data.
+    - Two paths:
+        - '*.tif' and '*.json': sets `args.path` and `args.path3`, searches
+          for reference.
+        - '*.tif' and vector file ('*.shp', '*.gpkg'): sets `args.path` and
+          `args.path2`.
+        - '*.csv' and '*.json': sets `args.path` and `args.path2`.
+    - Three paths:
+        - Image, vector, and JSON file are expected. Sets `args.path`,
+          `args.path2`, `args.path3`.
+
+    Additional options:
+    - 'help' with 'data' or 'metrics' in paths sets `args.help_data` or
+       `args.help_metrics`.
+
+    Args:
+        args (Namespace): Argument namespace containing a `path` list.
+
+    Returns:
+        Namespace: Updated namespace with `path`, `path2`, and `path3`
+                   attributes.
+
+    Raises:
+        SystemExit: If invalid paths are provided or an unsupported
+                    configuration is detected.
+    """
     if len(args.path) > 3:
         msg = f"\n\t{len(args.path)} paths entered - maximum 3 allowed.\n"
         sys.exit(msg)
 
     paths = args.path[:]
-    
-    # first check if there is a request to display additional help!!!
-    if 'data' in paths and 'help' in paths:
-        setattr(args, 'help_data', True)
+
+    # Check for help requests
+    if "data" in paths and "help" in paths:
+        setattr(args, "help_data", True)
         return args
-    if 'metrics' in paths and 'help' in paths:
-        setattr(args, 'help_metrics', True)
+    if "metrics" in paths and "help" in paths:
+        setattr(args, "help_metrics", True)
         return args
 
-    # the path contains 3 files
+    # Handle three paths
     if len(paths) == 3:
-        if Path(paths[-1]).suffix != '.json':
-            msg = f"\n\tThe last path should point to the `.json` file, \
-                    and it points to: {paths[-1]}\n"
-            sys.exit(msg)
+        if Path(paths[-1]).suffix != ".json":
+            sys.exit("\n\tThe last path should point to a `.json` file: "
+                     f"{paths[-1]}")
+        if Path(paths[1]).suffix not in vector_suffixes:
+            sys.exit("\n\tThe second path should point to a vector file: "
+                     f"{paths[1]}")
 
-        for i, pt in enumerate(paths, 1):
-            # pt = str(Path(pt).resolve())
-            pt = check_file_path(pt)
-            if i == 1:
-                setattr(args, "path", pt)
-            else:
-                setattr(args, f"path{i}", pt)
-    # there are two paths
+        setattr(args, "path", check_file_path(paths[0]))
+        setattr(args, "path2", check_file_path(paths[1]))
+        setattr(args, "path3", check_file_path(paths[2]))
+
+    # Handle two paths
     elif len(paths) == 2:
-        if Path(paths[0]).suffix in imgs_suffixes \
-                and Path(paths[-1]).suffix == '.json':
+        if (Path(paths[0]).suffix in imgs_suffixes and
+                Path(paths[-1]).suffix == ".json"):
             args.path = check_file_path(paths[0])
             args.path2 = None
             args.path3 = check_file_path(paths[-1])
-
-        elif Path(paths[0]).suffix in all_suffixes \
-                and Path(paths[-1]).suffix in imgs_suffixes:
+        elif (
+            Path(paths[0]).suffix in imgs_suffixes
+            and Path(paths[-1]).suffix in vector_suffixes
+        ):
             args.path = check_file_path(paths[0])
             args.path2 = check_file_path(paths[-1])
-
-        elif Path(paths[0]).suffix == '.csv' \
-                and Path(paths[-1]).suffix == '.json':
+            args.path3 = None
+        elif (
+            Path(paths[0]).suffix in imgs_suffixes
+            and Path(paths[-1]).suffix in imgs_suffixes
+        ):
+            args.path = check_file_path(paths[0])
+            args.path2 = check_file_path(paths[-1])
+        elif (Path(paths[0]).suffix == ".csv" and
+                Path(paths[-1]).suffix == ".json"):
             args.path = check_file_path(paths[0])
             args.path2 = check_file_path(paths[-1])
         else:
             sys.exit("\n\tInvalid input file paths! See help.\n")
 
-    # jeśli jest jeden plik
+    # Handle a single path
     elif len(paths) == 1:
-        if Path(paths[0]).suffix == '.csv':
+        suffix = Path(paths[0]).suffix
+        if suffix == ".csv":
             args.path = check_file_path(paths[0])
-        elif Path(paths[0]).suffix in ['.tiff', '.tif', '.TIF', '.TIFF']:
+        elif suffix in imgs_suffixes:
             args.path = check_file_path(paths[0])
             args.path2 = None
-            
-        elif Path(paths[0]).suffix in ['.shp', '.gpkg']:
-            m1 = f"\n\tOnly one path is entered: {paths[0]}."
-            m2 = "\tIn this case the data must be either a '*.csv' file or"
-            m3 = "a '*.tif' image.\n"
-            msg = f"{m1}\n{m2} {m3}"
+        elif suffix in vector_suffixes:
+            msg = (
+                f"\n\tOnly one path is entered: {paths[0]}.\n"
+                "\tData must be a '*.csv' file or a '*.tif' image.\n"
+            )
             sys.exit(msg)
         else:
-            msg = "\n\tWprowadzony argument nie spełnia wymagań skryptu\n"
-            sys.exit(msg)
+            sys.exit(
+                "\n\tThe provided argument does not meet the script's "
+                "requirements.\n"
+            )
 
     return args
 
 
 def args_validation(args, **kwargs):
-    # imgs_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF']
-    # all_suffixes = ['.tiff', '.tif', '.TIF', '.TIFF', '.shp', '.gpkg']
+    """
+    Validates and processes input arguments for a script.
 
-    # Checks if `save` and `zip` are not specified at the same time: only
-    # one of the options is allowed at a time
+    Key functionalities:
+        - Ensures mutually exclusive arguments `save` and `zip` are not
+          both set.
+        - Decodes paths and handles additional help flags
+          (`help_data`, `help_metrics`).
+        - Searches for reference files if required (e.g., for `.tif` images).
+        - Creates necessary directories if saving or reporting is enabled.
+        - Detects column separator for `.csv` files if not provided.
+        - Searches for a JSON file containing class mappings.
+        - Configures additional script-specific options.
+
+    Args:
+        args (Namespace): Argument namespace containing script options.
+        kwargs (dict): Additional keyword arguments (e.g., `script_name`).
+
+    Returns:
+        Namespace: Updated namespace with validated and processed arguments.
+
+    Raises:
+        SystemExit: If mutually exclusive arguments are set or required files
+                    are missing.
+    """
     if args.save and args.zip:
-        msg = """You can choose whether to save '*.csv' files or
-        '*.zip' archives to disk (you can't save both)!!!"""
+        msg = """You can choose whether to save '*.csv' files or '*.zip'
+        archives to disk (you can't save both)!!!"""
         msg = " ".join(line.strip() for line in msg.splitlines())
-        msg = textwrap.fill(msg, width=120, subsequent_indent='  ')
-        sys.exit(msg+'\n')
-    
-    # read and sort the paths or additional help
+        sys.exit(textwrap.fill(msg, width=120, subsequent_indent="  ") + "\n")
+
+    # Process paths and check additional help flags
     args = paths_decoder(args)
 
-    if hasattr(args, 'help_data') or hasattr(args, 'help_metrics'):
+    if hasattr(args, "help_data") or hasattr(args, "help_metrics"):
         return args
-    
-    # only the path to the image was entered, imgs_suffixes: gloabl variable
+
+    # Handle single `.tif` files by searching for reference files
     if Path(args.path).suffix in imgs_suffixes and args.path2 is None:
-        path = search_reference_file(args.path)
-        if not path:
-            msg = "\n\tFor file:\n\t  {}\n"
-            msg += "\t  no file with reference values found!!!"
-            msg += "(*.shp, *.gpkg).\n"
-            sys.exit(msg.format(args.path))
-        args.path2 = path
-        # args.path2 = args.path
-        # args.path = path
+        reference_path = search_reference_file(args.path)
+        if not reference_path:
+            msg = f"\n\tFor file:\n\t  {args.path}\n"
+            msg += "\t  no file with reference values found (*.shp, *.gpkg).\n"
+            sys.exit(msg)
+        args.path2 = reference_path
 
-    root_dir = Path(args.path).parent
-
-    # creates a directory to save the results, but only if something needs
-    # to be saved
+    # Set output directory for saving results
     if args.save or args.report or args.zip:
         args.out_dir = check_dir(args.path, args.out_dir)
         if args.save or args.report:
             Path(args.out_dir).mkdir(parents=True, exist_ok=True)
     else:
-        delattr(args, 'out_dir')
+        delattr(args, "out_dir")
 
+    # Parse report data if reporting is enabled
     if args.report:
         args.report_data = parse_report_data(args.report_data)
-
-        template_dir = Path(args.report_data['template_dir']).resolve()
+        template_dir = Path(args.report_data["template_dir"]).resolve()
         args.report_data["template_dir"] = str(template_dir)
-
-        report_file = args.report_data["report_file"]
-        report_file = str(Path(args.out_dir) / report_file)
-        args.report_data["report_file"] = report_file
+        report_file = Path(args.out_dir) / args.report_data["report_file"]
+        args.report_data["report_file"] = str(report_file)
     else:
         del args.report_data
-        # breakpoint()
 
-    if kwargs["script_name"]:
+    # Add script-specific options if provided
+    if kwargs.get("script_name"):
         args.script_name = kwargs["script_name"]
 
+    # Configure output files if saving is enabled
     if args.save:
-        # args.out_dir = check_dir(args.out_dir, args.path)
         args.out_files = [
             "cross_full",
             "binary_cross",
@@ -571,73 +567,70 @@ def args_validation(args, **kwargs):
             "average_acc",
         ]
 
+    # Configure zip file paths
     if args.zip:
-        if args.zip_name is not None:
-            args.zip_name = f"{args.zip_name}.zip"
-            # args.zip_path = str(Path(args.out_dir).with_name(args.zip_name))
-        else:
-            args.zip_name = f"{Path(args.out_dir).name}.zip"
+        args.zip_name = f"{args.zip_name or Path(args.out_dir).name}.zip"
+        args.zip_path = str(
+            Path(args.out_dir) / args.zip_name
+            if args.save or args.report
+            else Path(args.out_dir).with_name(args.zip_name)
+        )
 
-        # if it saves data or report then zip puts in the same directory
-        if args.save or args.report:
-            args.zip_path = str(Path(args.out_dir) / args.zip_name)
-        else:
-            args.zip_path = str(Path(args.out_dir).with_name(args.zip_name))
-
-    # detecting column separator in '*.csv' file
-    suffix = Path(args.path).suffix[1:]  # eg. '.csv' -> 'csv'
-    # suffix_list = ['tif', 'tiff', 'TIF', 'TIFF', 'gpkg', 'shp']
-    if args.sep is None and suffix == 'csv':
+    # Detect column separator for `.csv` files
+    if args.sep is None and Path(args.path).suffix == ".csv":
         args.sep = detects_separator(args.path)
 
-    # searching for the file '*.json' which contains the class map
+    # Search for JSON class map file
+    root_dir = Path(args.path).parent
     args.map_labels = search_json_file(root_dir)
+
     return args
 
 
-def remove_unnecessary_args(args): 
+def remove_unnecessary_args(args):
+    """
+    Removes unnecessary attributes from the argument namespace.
+
+    Args:
+        args (Namespace): Argument namespace to clean up.
+
+    Returns:
+        Namespace: Updated namespace with removed attributes.
+    """
     if not args.save:
-        delattr(args, 'save')
+        delattr(args, "save")
 
     if not args.zip:
-        delattr(args, 'zip')
-        delattr(args, 'zip_name')
+        delattr(args, "zip")
+        delattr(args, "zip_name")
 
     if not args.report:
-        delattr(args, 'report')
+        delattr(args, "report")
 
-    if args.data_type == 'imgs':
-        delattr(args, 'sep')
+    if args.data_type == "imgs":
+        delattr(args, "sep")
 
     if not args.reversed:
-        delattr(args, 'reversed')
-
-    # if hasattr(args, 'help_data') or hasattr(args, 'help_metrics'):
-    #     keys = ('help_data', 'help_metrics')
-    #     att = {key: getattr(args, key) for key in keys if hasattr(args, key)}
-
-    #     for key in vars(args).keys():
-    #         delattr(args, key)
-
-    #     for key, val in att.items():
-    #         setattr(args, key, val)
+        delattr(args, "reversed")
 
     return args
 
 
 def display_additional_help(args):
-    if hasattr(args, 'help_data') or hasattr(args, 'help_metrics'):
-        if hasattr(args, 'help_data'):
+    """
+    Displays additional help information if requested via arguments.
+
+    Args:
+        args (Namespace): Argument namespace containing help flags.
+
+    Returns:
+        None: Exits the script after displaying help information.
+    """
+    if hasattr(args, "help_data") or hasattr(args, "help_metrics"):
+        if hasattr(args, "help_data"):
             txt = FormatHelp(info.info_data).txt
-        elif hasattr(args, 'help_metrics'):
+        elif hasattr(args, "help_metrics"):
             txt = FormatHelp(info.info_metrics).txt
-        
+
         print(txt)
         sys.exit()
-
-    return
-
-
-
-
-
