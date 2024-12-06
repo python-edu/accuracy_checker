@@ -18,13 +18,14 @@ Klasy:
 
 """
 
+
 def handle_division_errors(func):
     def wrapper(*args, **kwargs):
         with np.errstate(divide='ignore', invalid='ignore'):
             result = func(*args, **kwargs)
             if isinstance(result, np.ndarray):  # Obsługa tablic NumPy
                 result[np.isnan(result)] = np.nan
-            elif isinstance(result, (float, int)):  # Obsługa pojedynczych liczb
+            elif isinstance(result, (float, int)):  # dla pojedynczych liczb
                 if np.isnan(result):
                     result = np.nan
             return result
@@ -37,7 +38,7 @@ class AccClasic:
     """\
     # Dane
 
-        predicted |                     
+        predicted |
           true    | water | forest | urban
        -----------+-------+--------+-------
         water     |   21  |    5   |   7
@@ -148,10 +149,9 @@ class AccClasic:
         diff = self._rows_sum - self._diagonalne
         with np.errstate(divide='ignore', invalid='ignore'):
             result = np.true_divide(diff, self._rows_sum)
-            # Zamień wartości wynikające z dzielenia przez zero na 0 (lub np.nan).
+            # Zamień wartości wynikające z dzielenia przez zero na np.nan.
             result[np.isnan(result)] = np.nan
         return np.round(result, self.precision)
-
 
     @handle_division_errors
     def _errors_of_commision(self):
@@ -168,8 +168,6 @@ class AccClasic:
                                                      np.nan,
                                                      dtype=float)
                                     )
-            # Zamień wartości wynikające z dzielenia przez zero na 0 (lub np.nan).
-            # result[np.isnan(result)] = -1
         return np.round(result, self.precision)
 
     @handle_division_errors
