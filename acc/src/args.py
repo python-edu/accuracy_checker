@@ -36,8 +36,8 @@ def parsuj_argumenty():
     - path.csv: one path - data saved in the '*.csv' file
     - path.tif: one path - image after classification (it will automatically \
       search for a file with reference data `path_ref.tif`)
-    - path.shp path.tif: 2 paths, the first is the reference data (image or \
-      vector) and the second is the image after classification
+    - path.tif path.shp: 2 paths, the first is the image after classification \
+       and the second is the reference data (image or vector)\
     - path.tif path.json: 2 paths, the first is the image after \
       classification, the second are the names of classes in json format \
       ({'1': ''wheat', ...}); it will automatically search for the file \

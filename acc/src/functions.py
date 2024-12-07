@@ -14,67 +14,40 @@ from acc.src import metrics
 # ---
 
 
-def ar2list(ar: np.array) -> list[list]:
-    res = ar.tolist()
-    return res
+# def ar2list(ar: np.array) -> list[list]:
+#     res = ar.tolist()
+#     return res
 
 
-# --
+#def sum_rows_cols(cross: pd.DataFrame):
+#    """Oblicza sumy w wierszach i kolumnach dla cross matrix oraz dodaje
+#    te sumy do cross matrix jako wiersze i kolumny podsumowujące."""
+#    cross = cross.copy()
+#    sum_row = cross.sum(axis=1).to_numpy()
+#    cross.loc[:, "sum_row"] = sum_row
+#
+#    sum_kol = cross.sum(axis=0).to_numpy()
+#    cross.loc["sum_kol", :] = sum_kol
+#
+#    cross = cross.astype("int")
+#    return cross
 
 
-def df2list(df: pd.DataFrame) -> list[list]:
-    df = df.copy()
-    if df.index.name is None and df.columns.name is None:
-        name = "-"
-
-    elif df.index.name is not None and df.columns.name is not None:
-        name = f"{df.index.name}/{df.columns.name}"
-    elif df.index.name is None:
-        name = df.columns.name
-    else:
-        name = df.index.name
-
-    df.index.name = name
-
-    df = df.reset_index()
-    cols = df.columns.to_list()
-    res = df.to_numpy()
-    res = ar2list(res)
-    res.insert(0, cols)
-    return res
-
-
-# --
-
-
-def sum_rows_cols(cross: pd.DataFrame):
-    """Oblicza sumy w wierszach i kolumnach dla cross matrix oraz dodaje
-    te sumy do cross matrix jako wiersze i kolumny podsumowujące."""
-    cross = cross.copy()
-    sum_row = cross.sum(axis=1).to_numpy()
-    cross.loc[:, "sum_row"] = sum_row
-
-    sum_kol = cross.sum(axis=0).to_numpy()
-    cross.loc["sum_kol", :] = sum_kol
-
-    cross = cross.astype("int")
-    return cross
-
-
-# --
-
-
-def nazwij_klasy(shape):
-    """
-    Jeśli cross nie ma nazw wierszy i kolumn (cross_raw) to tworzy nazwy klas:
-    - kl_01, kl_02,...
-    """
-    n = max(shape)
-    names = [f"kl_{i:0>2}" for i in range(1, n + 1)]
-    return names
-
-
-# ---
+# def nazwij_klasy(shape):
+#     """Generates class names for a cross matrix when row and column
+#     names are not provided. The class names are formatted as
+#     'kl_1', 'kl_2', ..., depending on the size of the matrix.
+#     
+#     Args:
+#         shape (tuple): The dimensions of the cross matrix (rows, columns).
+#     
+#     Returns:
+#         list: A list of class names in the format 'kl_1', 'kl_2', ..., 'kl_n'.
+#     """
+#     n = max(shape)
+#     k = 1 if n < 10 else 2
+#     names = [f"kl_{i:0>{k}d}" for i in range(1, n + 1)]
+#     return names
 
 
 def acc_from_cross(data, args):
@@ -86,7 +59,7 @@ def acc_from_cross(data, args):
                - binary cross matrix (bin_cross)
       - args:  obiekt z atrybutami, zwykle namespase z argparse
     """
-    #if args.data_type in ["data", "cross", "raw", "full"]:
+    # if args.data_type in ["data", "cross", "raw", "full"]:
     if args.data_type == 'binary':
         acc = metrics.AccClasicBin(data, args.precision)
     else:
@@ -95,9 +68,6 @@ def acc_from_cross(data, args):
     classic_acc = acc.tabela
 
     return classic_acc
-
-
-# ---
 
 
 def acc_from_bin_cross(data, args):
@@ -137,21 +107,15 @@ def acc_from_bin_cross(data, args):
     return modern1, modern2
 
 
-# ---
-
-
-def format_title(titles: list[str]) -> list[str]:
-    titles = [line.strip() for line in titles]
-    titles = [" ".join(line.split()) for line in titles]
-    titles = [
-        textwrap.fill(line,
-                      width=90,
-                      subsequent_indent=3 * " ") for line in titles
-    ]
-    return titles
-
-
-# ---
+#def format_title(titles: list[str]) -> list[str]:
+#    titles = [line.strip() for line in titles]
+#    titles = [" ".join(line.split()) for line in titles]
+#    titles = [
+#        textwrap.fill(line,
+#                      width=90,
+#                      subsequent_indent=3 * " ") for line in titles
+#    ]
+#    return titles
 
 
 def save_results(out_dir: str, df_dict: dict) -> list[str]:
@@ -172,9 +136,6 @@ def save_results(out_dir: str, df_dict: dict) -> list[str]:
     return recorded
 
 
-# ---
-
-
 def zip_results(zip_path: str, df_dict: dict) -> None:
     """Saves calculation results directly to a 'zip' archive. Does
     not create '*.csv' files on disk. The result is just
@@ -193,9 +154,6 @@ def zip_results(zip_path: str, df_dict: dict) -> None:
                 csv_buffer.seek(0)
                 # Dodanie pliku CSV do archiwum ZIP
                 zipf.writestr(name, csv_buffer.getvalue())
-
-
-# ---
 
 
 class Verbose:
@@ -220,7 +178,8 @@ class Verbose:
                 data = self._format_dict(data, width=50)
                 data = "\n".join(data)
                 print(data)
-            elif isinstance(data, pd.DataFrame) and self._check_df_len(data) <= 160:
+            elif isinstance(data, pd.DataFrame) \
+                    and self._check_df_len(data) <= 160:
                 print(tabulate(data,
                                headers="keys",
                                showindex=True,
@@ -233,15 +192,11 @@ class Verbose:
                 print(data)
             print()
 
-    # ---
-
     def _format_line(self, line: str, **kwargs) -> str:
         line = self._key2str(line)
         line = " ".join(line.split())
         line = textwrap.fill(line, **kwargs)
         return line
-
-    # ---
 
     def _format_dict(self, dc: dict, width: int, char=" ") -> str:
         # fix lengh k: 2 space + max(len(key))
@@ -270,23 +225,9 @@ class Verbose:
         # res = '\n'.join(res)
         return res
 
-    # ---
-
     def _format_list(self, ls: list) -> str:
         lines = [f"{i: >3}. {str(line)}" for i, line in enumerate(ls, 1)]
         return "\n".join(lines)
-
-    # ---
-
-    def _format_subargs(self, dc: dict):
-        lines = self._format_dict(dc, width=130, char=".")
-        line1 = f"{lines.pop(0): >16}"
-        lines = [f"{' '*17}{line}" for line in lines]
-        lines.insert(0, line1)
-        lines = "\n".join(lines)
-        return lines
-
-    # ---
 
     def _check_df_len(self, df):
         """Checks whether the length of 'pd.DataFrame' allows it to be
@@ -294,8 +235,6 @@ class Verbose:
         df_len = "".join([str(name) for name in df.columns])
         df_len = len(df_len) + 5
         return df_len
-
-    # ---
 
     def _print_args(self, args):
         """
@@ -306,7 +245,7 @@ class Verbose:
             args_dict = vars(args)
         else:
             args_dict = args.copy()
-        
+
         # --- setup keys order
         keys_order = ["path", "data_type", "func"]
 
@@ -340,22 +279,6 @@ class Verbose:
         res = []
         for key in keys_order:
             line = args_dict[key]
-            # if key == "report_data" and args.report:
-            #     line = self._format_subargs(line)
-            #     # line = '\n'.join(line)
-
-            # elif key == "save" and args.save:
-            #     line = {
-            #         "out_dir": args_dict.get("out_dir"),
-            #         "out_files": args_dict.get("out_files"),
-            #     }
-            #     line = self._format_subargs(line)
-
-            # else:
-            #     line = self._format_line(
-            #         line, **{"width": 110, "subsequent_indent": 3 * " "}
-            #     )
-            # res.append(f"{key: >13}:   {line}")
             line = self._format_line(
                 line, **{"width": 110, "subsequent_indent": 3 * " "}
             )

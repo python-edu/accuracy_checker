@@ -1,14 +1,14 @@
 import pandas as pd
-import rasterio
-import geopandas as gpd
-import numpy as np
+# import rasterio
+# import geopandas as gpd
+# import numpy as np
 from pathlib import Path
-from rasterio.features import geometry_mask
+# from rasterio.features import geometry_mask
 
 # local imports
 from acc.src import cross_matrix as crm
 from acc.src import binary_acc
-from acc.src import functions as fn
+# from acc.src import functions as fn
 from acc.src import clip_rasterize as clp
 
 # --- dla podpowiadacza:
@@ -41,10 +41,13 @@ def from_raw(args):
     kwargs = {'header': 0, 'index_col': None}
     data = pd.read_csv(args.path, sep=args.sep, **kwargs)
     raw_obj = crm.RawData(data, map_labels=args.map_labels)
-    cm_obj = crm.CrossMatrix(raw_obj.map_labels,
-                             raw_obj.true_values,
-                             raw_obj.predicted
+    cm_obj = crm.CrossMatrix(raw_obj.true_values,
+                             raw_obj.predicted,
+                             raw_obj.map_labels,
                              )
+    # if there is no json file with map_labels - we set map_labels to None
+    if args.map_labels is None:
+        cm_obj.map_labels = None
     valid_cm = crm.CrossMatrixValidator(cm_obj.cross_full, cm_obj.map_labels)
     # binary_cross, binary_cross_rep = create_binary_matrix(valid_cm.cross)
     binary_obj = create_binary_matrix(valid_cm.cross)
@@ -59,7 +62,7 @@ def from_cross_full(args):
     cross_full = pd.read_csv(args.path, sep=args.sep, **kwargs)
     # cross = cross_full.iloc[:-1, :-1]
     # binary_cross, binary_cross_rep = create_binary_matrix(cross)
-    
+
     valid_cm = crm.CrossMatrixValidator(cross_full, args.map_labels)
     binary_obj = create_binary_matrix(valid_cm.cross)
     return valid_cm, binary_obj
@@ -73,7 +76,7 @@ def from_cross(args):
     and column descriptions but without the sum of rows and columns."""
     kwargs = {'header': 0, 'index_col': 0}
     cross = pd.read_csv(args.path, sep=args.sep, **kwargs)
-    
+
     valid_cm = crm.CrossMatrixValidator(cross, args.map_labels)
     binary_obj = create_binary_matrix(valid_cm.cross)
     return valid_cm, binary_obj
@@ -130,16 +133,16 @@ def from_imgs(args):
     # Loads reference data, which can be:
     #  - geopandas.GeoDataFrame, None
     #  - raster array, transform
-    ref_data = clp.load_reference_data(args.path)
+    ref_data = clp.load_reference_data(args.path2)
 
     # if reference is geopandas
-    suffix = Path(args.path).suffix
+    suffix = Path(args.path2).suffix
     if suffix in ('.shp', '.gpkg'):
-        clipped_image, clipped_meta = clp.clip_raster(args.path2, ref_data)
+        clipped_image, clipped_meta = clp.clip_raster(args.path, ref_data)
         shapes = clp.get_shapes(ref_data)
         ref_data = clp.rasterize_vector(shapes, clipped_meta)
 
-    img = clp.load_classification_data(args.path2)
+    img = clp.load_classification_data(args.path)
 
     # pd.df
     raw_data = create_raw_data(ref_data, img)
@@ -148,9 +151,9 @@ def from_imgs(args):
     raw_obj = crm.RawData(raw_data, map_labels=args.map_labels)
 
     # create cross matrix
-    cm_obj = crm.CrossMatrix(raw_obj.map_labels,
-                             raw_obj.true_values,
-                             raw_obj.predicted
+    cm_obj = crm.CrossMatrix(raw_obj.true_values,
+                             raw_obj.predicted,
+                             raw_obj.map_labels,
                              )
 
     valid_cm = crm.CrossMatrixValidator(cm_obj.cross_full)
@@ -164,7 +167,8 @@ def create_raw_data(ref_data, class_data):
     Tworzy DataFrame porównujący piksele referencyjne z klasyfikacją.
     """
     if ref_data.shape != class_data.shape:
-        raise ValueError("Rozmiary danych referencyjnych i klasyfikacji nie pasują do siebie.")
+        raise ValueError("Rozmiary danych referencyjnych i klasyfikacji \
+                nie pasują do siebie.")
 
     true_pixels = ref_data.flatten()
     predicted_pixels = class_data.flatten()
