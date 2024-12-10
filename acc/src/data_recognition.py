@@ -49,9 +49,6 @@ def is_data_raw(df: pd.DataFrame) -> Tuple[bool, dict]:
     return check, meta
 
 
-# ---
-
-
 def is_cross_full(df: pd.DataFrame) -> Tuple[bool, dict]:
     meta = {"func": from_cross_full, "data_type": "full"}
     cols_sum = df.iloc[:-1, :-1].sum(axis=0)
@@ -63,9 +60,6 @@ def is_cross_full(df: pd.DataFrame) -> Tuple[bool, dict]:
     if not check:
         meta = None
     return check, meta
-
-
-# ---
 
 
 def is_cross_raw(df: pd.DataFrame) -> Tuple[bool, dict]:
@@ -80,9 +74,6 @@ def is_cross_raw(df: pd.DataFrame) -> Tuple[bool, dict]:
     return check, meta
 
 
-# ---
-
-
 def is_cross_matrix(df: pd.DataFrame) -> bool:
     # cross: matrix with numbers, row and column descriptions,
     # and without no summaries
@@ -95,16 +86,24 @@ def is_cross_matrix(df: pd.DataFrame) -> bool:
     check3 = df.columns.name is None or df.columns.name in ("", " ")
 
     check4 = df.shape[0] >= df.shape[1]
-    check5 = not all(df.iloc[:-1, :].sum(axis=0) == df.iloc[-1, :])   
-    
-    check = all([check1, check2, check3, check4, check5])
+    check5 = not all(df.iloc[:-1, :].sum(axis=0) == df.iloc[-1, :])
+
+    names = ["TP", "TN", "FP", "FN"]
+    if len(df.columns) == len(names) and all(names == df.columns):
+        # checks the matrix layout: horizontal or vertical
+        # layout = 'vertical'
+        check6 = False
+    elif len(df.index) == len(names) and all(names == df.index):
+        # layout = 'horizontal'
+        check6 = False
+    else:
+        check6 = True
+
+    check = all([check1, check2, check3, check4, check5, check6])
     # breakpoint()
     if not check:
         meta = None
     return check, meta
-
-
-# ---
 
 
 def is_binary_matrix(df: pd.DataFrame) -> Tuple[bool, dict]:
@@ -129,9 +128,6 @@ def is_binary_matrix(df: pd.DataFrame) -> Tuple[bool, dict]:
     return check, meta
 
 
-# ---
-
-
 def is_imgs(args):
     """Są 2 przypadki:
     1. args.path to jedna ścieżka do obrazu ('tif', 'tiff', ...) oznacza, żę
@@ -149,9 +145,6 @@ def is_imgs(args):
     if suffix in ["tif", "tiff", "TIF", "TIFF", "shp", "gpkg"]:
         return True, meta
     return False, None
-
-
-# ---
 
 
 def remove_unnecessary_args(args):
@@ -174,17 +167,12 @@ def remove_unnecessary_args(args):
     return args
 
 
-# ---
-
-
-# def specify_data_type(args):
 def recognize_data_type(args):
     """The function determines what type of data `args.path` points to. The
     data are either 'csv' files or '*.tif' and '*.shp' (or '*.gpkg') files.
     In the first step it checks if the data are images (image, vector).
     """
     # meta = {'func': None, 'data_type': None, 'layout': None}
-    # update_args = lambda args, mt: [setattr(args, k, v) for k, v in mt.items()]
 
     def update_args(meta):
         for key, val in meta.items():
@@ -208,18 +196,8 @@ def recognize_data_type(args):
     for func, kwargs in is_functions.items():
         df = pd.read_csv(args.path, sep=args.sep, **kwargs)
         check, meta = func(df)
-
+        # breakpoint()
         if check:
             # update_args(args, meta)
             update_args(meta)
             return args
-
-
-# ---
-
-
-# def recognize_data_type(args):
-#     """Main function to recognize data."""
-#     args = specify_data_type(args)
-#     args = remove_unnecessary_args(args)
-#     return args
