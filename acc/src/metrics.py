@@ -3,23 +3,37 @@
 import numpy as np
 import pandas as pd
 
-# ---
 
 """
-Moduł zawiera klasy dostarczające metody do obliczania różnych wskaźników
-dokładności.
+This module provides classes for calculating various accuracy metrics commonly
+used in classification assessments, especially in remote sensing and machine
+learning.
 
-Klasy:
-  ## 1. 'AccClasic'    - oblicza wskaźniki 'klasyczne' na podstawie
-                         'cross matrix'
-  ## 2. 'AccClasicBin' - oblicza wskaźniki 'klasyczne' na podstawie 'binTF'
-  ## 3. 'AccIndex'     - oblicza wskaźniki z machine learning na podstawie
-                         'binTF'
-
+Classes:
+  1. `AccClasic`:
+      - Computes 'classic' metrics based on a confusion matrix (cross matrix).
+  2. `AccClasicBin`:
+      - Computes 'classic' metrics using a binary confusion matrix
+        (binary cross matrix).
+  3. `AccIndex`:
+      - Computes accuracy metrics commonly used in machine learning.
 """
 
 
 def handle_division_errors(func):
+    """
+    A decorator for handling division errors in metric calculations.
+
+    Ensures division by zero and invalid operations (e.g., 0/0) are
+    handled safely. Replaces such results with `np.nan`.
+
+    Args:
+        func: The function performing a division operation.
+
+    Returns:
+        The wrapped function with division error handling.
+    """
+
     def wrapper(*args, **kwargs):
         with np.errstate(divide='ignore', invalid='ignore'):
             result = func(*args, **kwargs)
@@ -31,13 +45,17 @@ def handle_division_errors(func):
             return result
     return wrapper
 
-# -----------------------------------------------------------------------------
-
 
 class AccClasic:
-    """\
-    # Dane
+    """
+    Calculates 'classic' accuracy metrics from a cross matrix
+    (confusion matrix).
 
+    Input Data:
+        - The input data should be a pandas DataFrame or a NumPy array.
+        - A cross matrix without row and column summaries is expected.
+
+    Example Input Cross Matrix:
         predicted |
           true    | water | forest | urban
        -----------+-------+--------+-------
@@ -45,15 +63,11 @@ class AccClasic:
         forest    |    6  |   31   |   2
         urban     |    0  |    1   |  22
 
-       - wartości referencyjne w wierszach
-       - wartości `predicted` w kolumnach
-
-      Dane wejściowe:
-        - pd.DataFRame lub np.array
-        - cross matrix - bez podsumowań wierszy i kolumn!!!!
+       - Rows represent reference (true) values.
+       - Columns represent predicted values.
 
 
-    # Metryki
+    Metrics:
 
       1. OA - overall accuracy:
                         OA = sum(all_good) / sum(all)
@@ -70,12 +84,11 @@ class AccClasic:
       5. CME - errorsOfCommission
                         CME = (sum(cols) - sum(all_good)) / sum(cols)
 
-    gdzie:
-      - sum(all):       suma wszytskich komórek w cross matrix
-      - sum(all_good):  suma wartości na przekątnej cross matrix
-      - sum(rows):      suma wierszy
-      - sum(cols):      suma kolumn
-
+    where:
+      - `sum(all)` is the sum of all elements in the matrix.
+      - `sum(all_good)` is the diagonal of the matrix (correct classifications)
+      - `sum(rows)` is the sum of all values in a row.
+      - `sum(cols)` is the sum of all values in a column.
     """
 
     # ---
@@ -83,10 +96,11 @@ class AccClasic:
     def __init__(self, data, precision=7, revers=False):
         """
         Args:
-          - data: cross matrix, pd.DataFrame lub np.array
-          - revers: wskazuje, że jest odwrócony układ cross matrix:
-                    * kolumny to prawda
-                    * wiersze to predicted
+            data: A cross matrix (pandas DataFrame or NumPy array).
+            precision: Number of decimal places for rounding results.
+            revers: If True, reverses the matrix layout where:
+                - Columns represent true values.
+                - Rows represent predicted values.
         """
         self.precision = precision
 

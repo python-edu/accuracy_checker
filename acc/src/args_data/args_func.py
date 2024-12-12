@@ -396,8 +396,8 @@ def paths_decoder(args):
           `args.path2`, `args.path3`.
 
     Additional options:
-    - 'help' with 'data' or 'metrics' in paths sets `args.help_data` or
-       `args.help_metrics`.
+    - 'help' with 'usage', 'data' or 'metrics' in paths sets `args.help_usage`,
+       `args.help_data` or `args.help_metrics`.
 
     Args:
         args (Namespace): Argument namespace containing a `path` list.
@@ -417,6 +417,9 @@ def paths_decoder(args):
     paths = args.path[:]
 
     # Check for help requests
+    if "usage" in paths and "help" in paths:
+        setattr(args, "help_usage", True)
+        return args
     if "data" in paths and "help" in paths:
         setattr(args, "help_data", True)
         return args
@@ -467,6 +470,7 @@ def paths_decoder(args):
     # Handle a single path
     elif len(paths) == 1:
         suffix = Path(paths[0]).suffix
+        # breakpoint()
         if suffix == ".csv":
             args.path = check_file_path(paths[0])
         elif suffix in imgs_suffixes:
@@ -495,7 +499,7 @@ def args_validation(args, **kwargs):
         - Ensures mutually exclusive arguments `save` and `zip` are not
           both set.
         - Decodes paths and handles additional help flags
-          (`help_data`, `help_metrics`).
+          (`help_usage`, `help_data`, `help_metrics`).
         - Searches for reference files if required (e.g., for `.tif` images).
         - Creates necessary directories if saving or reporting is enabled.
         - Detects column separator for `.csv` files if not provided.
@@ -522,7 +526,10 @@ def args_validation(args, **kwargs):
     # Process paths and check additional help flags
     args = paths_decoder(args)
 
-    if hasattr(args, "help_data") or hasattr(args, "help_metrics"):
+    if (hasattr(args, "help_usage")
+        or hasattr(args, "help_data")
+        or hasattr(args, "help_metrics")
+        ):
         return args
 
     # Handle single `.tif` files by searching for reference files
@@ -626,11 +633,16 @@ def display_additional_help(args):
     Returns:
         None: Exits the script after displaying help information.
     """
-    if hasattr(args, "help_data") or hasattr(args, "help_metrics"):
+    if (hasattr(args, "help_usage")
+        or hasattr(args, "help_data")
+        or hasattr(args, "help_metrics")
+        ):
         if hasattr(args, "help_data"):
             txt = FormatHelp(info.info_data).txt
         elif hasattr(args, "help_metrics"):
             txt = FormatHelp(info.info_metrics).txt
+        elif hasattr(args, "help_usage"):
+            txt = FormatHelp(info.info_usage).txt
 
         print(txt)
         sys.exit()

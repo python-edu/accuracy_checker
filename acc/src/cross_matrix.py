@@ -419,7 +419,7 @@ class CrossMatrixValidator:
             pd.DataFrame: Adjusted DataFrame with integer values.
         """
         data = copy.deepcopy(data)
-
+        # breakpoint()
         if isinstance(data, (list, tuple, np.ndarray)):
             data = pd.DataFrame(data)
             data.columns = range(data.shape[1])
@@ -431,6 +431,7 @@ class CrossMatrixValidator:
 
         data.columns.name = "predicted"
         data.index.name = "true"
+        # breakpoint()
 
         return data.astype(int)
 

@@ -13,18 +13,17 @@ import numpy as np
 from pathlib import Path
 
 
-
 def load_reference_data(ref_path):
     """
     Loads reference data as a numpy array from supported formats
     (TIFF, Shapefile, Geopackage).
-    
+
     Args:
         ref_path (str): Path to the reference data file.
-    
+
     Returns:
         numpy.ndarray or geopandas.GeoDataFrame: Reference data as a numpy
-                                                 array for raster formats 
+                                                 array for raster formats
                                                  (TIFF) or a GeoDataFrame
                                                  for vector formats (Shapefile,
                                                  Geopackage).
@@ -41,10 +40,10 @@ def load_reference_data(ref_path):
 def load_classification_data(class_path):
     """
     Loads classification data from a TIFF file as a numpy array.
-    
+
     Args:
         class_path (str): Path to the classification data file.
-    
+
     Returns:
         numpy.ndarray: Classification data as a numpy array with dtype uint8.
     """

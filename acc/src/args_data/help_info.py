@@ -1,3 +1,30 @@
+info_usage = """
+Running the script, order and layout of input files:
+
+1. The input is a single '*.csv' file:
+    - raw data: data2cols.csv or data3cols.csv
+    - confusion matrix: cross_raw.csv, cross.csv or cross_full.csv
+    - binary_cross.csv
+
+    -- `accuracy file.csv`
+    -- `accuracy file.csv class_map.json`
+
+
+2. Input data:
+    - an image, after classification - usually of type '*.tif'
+    - reference data: image/mask '*.tif' or vector data e.g. '*.shp', '*.gpkg'
+
+    -- `accuracy raster.tif`
+    -- `accuracy raster.tif class_map.json`
+
+    -- `accuracy raster.tif reference_raster.tif`
+    -- `accuracy raster.tif reference_raster.tif class_map.json`
+
+    -- `accuracy raster.tif reference_vector.shp`
+    -- `accuracy raster.tif reference_vector.shp class_map.json`
+"""
+
+
 info_metrics = """
 1. The definitions of the metrics are mainly based on the binary \
 error matrix with the following symbols:

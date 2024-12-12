@@ -92,7 +92,6 @@ def from_cross_raw(args):
     """
     kwargs = {'header': None, 'index_col': None}
     cross_raw = pd.read_csv(args.path, sep=args.sep, **kwargs)
-
     valid_cm = crm.CrossMatrixValidator(cross_raw, args.map_labels)
     binary_obj = create_binary_matrix(valid_cm.cross)
     return valid_cm, binary_obj

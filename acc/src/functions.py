@@ -13,42 +13,6 @@ from acc.src import metrics
 # ---
 
 
-# def ar2list(ar: np.array) -> list[list]:
-#     res = ar.tolist()
-#     return res
-
-
-#def sum_rows_cols(cross: pd.DataFrame):
-#    """Oblicza sumy w wierszach i kolumnach dla cross matrix oraz dodaje
-#    te sumy do cross matrix jako wiersze i kolumny podsumowujące."""
-#    cross = cross.copy()
-#    sum_row = cross.sum(axis=1).to_numpy()
-#    cross.loc[:, "sum_row"] = sum_row
-#
-#    sum_kol = cross.sum(axis=0).to_numpy()
-#    cross.loc["sum_kol", :] = sum_kol
-#
-#    cross = cross.astype("int")
-#    return cross
-
-
-# def nazwij_klasy(shape):
-#     """Generates class names for a cross matrix when row and column
-#     names are not provided. The class names are formatted as
-#     'kl_1', 'kl_2', ..., depending on the size of the matrix.
-#     
-#     Args:
-#         shape (tuple): The dimensions of the cross matrix (rows, columns).
-#     
-#     Returns:
-#         list: A list of class names in the format 'kl_1', 'kl_2', ..., 'kl_n'.
-#     """
-#     n = max(shape)
-#     k = 1 if n < 10 else 2
-#     names = [f"kl_{i:0>{k}d}" for i in range(1, n + 1)]
-#     return names
-
-
 def acc_from_cross(data, args):
     """
     Computes accuracy metrics from a cross matrix or a binary cross matrix.
