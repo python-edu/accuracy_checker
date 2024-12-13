@@ -217,7 +217,7 @@ These metrics can be conventionally divided into simple metrics (calculated dire
 3.2. Complex metrics:
 
     - PT (Prevalence Threshold):
-      PT = {[TPR*(1 − TNR)]^0.5 + TNR − 1} / (TPR + TNR − 1)
+      PT = ([TPR*(1 − TNR)]^0.5 + TNR − 1) / (TPR + TNR − 1)
 
     - BA (Balanced accuracy):
       ba = (TPR + TNR)/2
@@ -233,3 +233,5 @@ These metrics can be conventionally divided into simple metrics (calculated dire
 
     - MK (markedness (MK) or deltaP):
       mk = PPV + NPV - 1
+
+>$PT = ((TPR*(1 − TNR))^0.5 + TNR − 1) / (TPR + TNR − 1)$
