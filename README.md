@@ -37,8 +37,9 @@ Running the script, order and layout of input files:
 # Data Help
 
 ### 1. Raw data:
-Stores classification results in a table (*.csv) with 2 or 3 columns:
+Stores classification results in a table (`*.csv`) with 2 or 3 columns:
 
+```
     - 2 columns:
 
     |    true   | predicted |
@@ -52,6 +53,7 @@ Stores classification results in a table (*.csv) with 2 or 3 columns:
     |-----------+-----------+----------|
     |    int    |    int    |    str   |
     |    ...    |    ...    |    ...   |
+```
 
  *Where*:
  - first column: true values (actual classes)
