@@ -10,7 +10,6 @@ authors = [{ name = "Piotr Kramarczyk", email = "piotrkramarczyk@proton.me" }]
 
 description = "Calculates popular metrics of accuracy for classifying raster images."
 readme = "README.md"
-readme-content-type = "text/markdown"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 keywords = ["accuracy", "classification", "raster", "metrics", "GIS"]
