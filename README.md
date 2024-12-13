@@ -88,8 +88,8 @@ Default layout is:
  - rows: True classes (true labels).
  - columns: Predicted classes (predicted labels)
 
-
-``` |            | water | forest | urban | ...
+```
+    |            | water | forest | urban | ...
     |------------+-------+--------+-------+-----
     |   water    |   21  |    5   |   7   | ...
     |   forest   |    6  |   31   |   2   | ...
@@ -107,8 +107,8 @@ Default layout is:
  - rows: True classes (true labels).
  - columns: Predicted classes (predicted labels)
 
-
-``` |            | water | forest | urban | ... |  sums  |
+```
+    |            | water | forest | urban | ... |  sums  |
     |------------+-------+--------+-------+-----|--------|
     |   water    |   21  |    5   |   7   | ... |   ...  |
     |   forest   |    6  |   31   |   2   | ... |   ...  |
@@ -121,13 +121,14 @@ Default layout is:
 
 ### 5. Binary - cross matrix:
 Confusion matrix for multi-class classification.
-
+```
     |    | water | forest | ... |
     |----+-------+--------+-----|
     | TP |    1  |   55   | ... |
     | TN |   15  |   99   | ... |
     | FP |    5  |    3   | ... |
     | FN |   33  |   46   | ... |
+```
 
  *where*:
  - columns: represent the classes in the dataset
