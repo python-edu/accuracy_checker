@@ -202,13 +202,13 @@ These metrics can be conventionally divided into simple metrics (calculated dire
    >$FPR = FP / N = FP / (FP + TN) = 1 − TNR$
 
  - FDR (false discovery rate):
-   >$FDR = FP / (FP + TP) = 1 − PPV$
+   >$FDR = FP / (FP + TP) = 1 − PPV $
 
  - FOR (false omission rate):
-   >$FOR = FN / (FN + TN) = 1 − NPV$
+   >$FOR = FN / (FN + TN) = 1 − NPV $
 
  - TS / CSI (Threat score (TS) or critical success index (CSI)):
-   >$TS = TP / (TP + FN + FP$
+   >$TS = TP / (TP + FN + FP) $
 
  - MCC (Matthews correlation coefficient):
    >$mcc = (TP \cdot TN - FP \cdot FN) / ((TP+FP) \cdot (TP+FN) \cdot (TN+FP) \cdot (TN+FN))^{0.5}$
@@ -223,6 +223,7 @@ These metrics can be conventionally divided into simple metrics (calculated dire
    >$ba = (TPR + TNR) / 2$
 
  - F1 score (is the harmonic mean of precision and sensitivity):
+   >$ f1 = 2 \cdot (PPV \cdot TPR) / (PPV + TPR) = 2 \cdot TP / (2 \cdot TP + FP + FN) $
    >$f1 = 2 \cdot (PPV\cdot TPR) / (PPV+TPR) = (2*TP) / (2*TP+FP+FN)$
 
  - FM (Fowlkes–Mallows index):
