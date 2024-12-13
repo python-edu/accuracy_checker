@@ -53,14 +53,15 @@ Stores classification results in a table (*.csv) with 2 or 3 columns:
     |    int    |    int    |    str   |
     |    ...    |    ...    |    ...   |
 
-Where:
-    - first column: true values (actual classes)
-    - second column: predicted values (predicted classes)
-    - third column: short names of classes e.g. water, wheat etc.
+ *Where*:
 
-Input:
-    - columns must be in order [true_values, predicted]
-    - column names do not matter (eg. true, true_values, etc)
+ - first column: true values (actual classes)
+ - second column: predicted values (predicted classes)
+ - third column: short names of classes e.g. water, wheat etc.
+
+ *Input*:
+ - columns must be in order [true_values, predicted]
+ - column names do not matter (eg. true, true_values, etc)
 
 
 ### 2. Raw - cross matrix:
