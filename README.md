@@ -72,10 +72,11 @@ Default layout is:
  - rows: True classes (true labels).
  - columns: Predicted classes (predicted labels)
 
-    |   21  |    5   |   7   | ...
+``` |   21  |    5   |   7   | ...
     |    6  |   31   |   2   | ...
     |    0  |    1   |  22   | ...
     |  ...  |   ...  |  ...  | ...
+```
 
 
 ### 3. Cross - cross matrix:
@@ -88,12 +89,13 @@ Default layout is:
  - columns: Predicted classes (predicted labels)
 
 
-    |            | water | forest | urban | ...
+``` |            | water | forest | urban | ...
     |------------+-------+--------+-------+-----
     |   water    |   21  |    5   |   7   | ...
     |   forest   |    6  |   31   |   2   | ...
     |   urban    |    0  |    1   |  22   | ...
     |    ...     |  ...  |   ...  |  ...  | ...
+```
 
 
 ### 4. Full - cross matrix:
@@ -106,7 +108,7 @@ Default layout is:
  - columns: Predicted classes (predicted labels)
 
 
-    |            | water | forest | urban | ... |  sums  |
+``` |            | water | forest | urban | ... |  sums  |
     |------------+-------+--------+-------+-----|--------|
     |   water    |   21  |    5   |   7   | ... |   ...  |
     |   forest   |    6  |   31   |   2   | ... |   ...  |
@@ -114,6 +116,7 @@ Default layout is:
     |    ...     |  ...  |   ...  |  ...  | ... |   ...  |
     |------------+-------+--------+-------+-----|--------|
     |    sums    |  ...  |   ...  |  ...  | ... |   ...  |
+```
 
 
 ### 5. Binary - cross matrix:
