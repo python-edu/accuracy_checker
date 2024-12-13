@@ -8,6 +8,7 @@ from acc.src import data_recognition
 from acc.src import functions as fn
 from acc.src.args_data import args_func as afn
 from acc.src.report import AccuracyReport
+from acc.src.verbose import Verbose
 
 
 def main():
@@ -16,9 +17,6 @@ def main():
     # 1. Obsługa argumentów linii poleceń
     # =====================================================================
     args = parser.parse_args()
-    # args = afn.args_validation(args,
-    #                            **{'script_name': __file__, 'info': info})
-
     args = afn.args_validation(args, **{"script_name": __file__})
 
     # 1a. It will display additional help and terminate the script
@@ -27,8 +25,9 @@ def main():
     # --- scans data and checks data type ---
     args = data_recognition.recognize_data_type(args)
     args = afn.remove_unnecessary_args(args)
-    vb = fn.Verbose(args.verbose)
-    vb(args, "Script arguments:", args_data=True)
+
+    vb = Verbose(args.verbose)
+    vb(args, "Script arguments:")
 
     # 2. Odczyt danych
     # =====================================================================
@@ -102,7 +101,6 @@ def main():
 
     # 6. Creates html report
     # =====================================================================
-    # if args.report:
     if hasattr(args, "report"):
 
         titles = fn.format_title(
