@@ -1,6 +1,8 @@
 import sys
 import numpy as np
 import pandas as pd
+
+# local import
 from acc.src.args import parsuj_argumenty
 from acc.src import data_recognition
 from acc.src import functions as fn
@@ -102,7 +104,6 @@ def main():
     # =====================================================================
     # if args.report:
     if hasattr(args, "report"):
-        # df_dict["bin_cross"] = bin_cross_rep
 
         titles = fn.format_title(
             [
@@ -121,7 +122,6 @@ def main():
         report_data = args.report_data.copy()
         report_data.update({"script_name": args.script_name})
         report = AccuracyReport(**report_data)
-        # breakpoint()
         data_dict = dict(zip(titles, df_dict.values()))
         res = report(data_dict)
         # breakpoint()

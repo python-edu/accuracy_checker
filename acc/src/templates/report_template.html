@@ -3,49 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Raport</title>
+    <title>Report</title>
     <style>
-        /* Ustawienia koloru tła */
-        body {
-            background-color: #b3ad8d; /* Lekko przyciemniony khaki */
-            font-family: Arial, sans-serif;
-            font-size: 120%; /* Powiększenie głównego rozmiaru czcionki o 20% */
-            margin: 0;
-            padding: 0;
-        }
-
-        h1, h2 {
-            color: #333;
-        }
-
-        /* Stylowanie tabel */
-        table {
-            width: auto; /* Automatyczna szerokość */
-            max-width: 100%; /* Maksymalnie do szerokości strony */
-            background-color: #f2f2f2; /* Delikatnie wyszarzone tło tabeli */
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            margin-left: auto;  /* Centrowanie tabeli */
-            margin-right: auto;
-            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1); /* Lekki cień pod tabelą */
-        }
-        
-        table, th, td {
-            border: 1px solid #888; /* Lekko pogrubione obramowanie */
-        }
-
-        th {
-            background-color: #d9d7bd; /* Przywrócony, mniej jasny odcień dla nagłówków tabel */
-            font-weight: bold;
-            font-size: 1em; /* Rozmiar czcionki nagłówków */
-        }
-
-        td {
-            background-color: #eaeaea; /* Lekko wyszarzone komórki danych */
-            padding: 8px;
-            text-align: center;
-            font-size: 0.85em; /* 15% mniejsze niż nagłówki */
-        }
+        {{ css_content | safe }}
     </style>
 </head>
 <body>
@@ -59,7 +19,7 @@
     <h2>Tabele:</h2>
     {% for title, table_html in table_data.items() %}
         <h3>{{ loop.index }}. {{ title }}</h3>
-        <div style="overflow-x: auto;">
+        <div class="table-container">
             {{ table_html | safe }}
         </div>
     {% endfor %}

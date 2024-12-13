@@ -14,6 +14,7 @@ description = FH(
 
 Additional help:
 
+- `accuracy usage help`: displays help about script usage
 - `accuracy data help`: displays help about input data `*.csv`
 - `accuracy metrics help`: displays information about accuracy metrics
     """

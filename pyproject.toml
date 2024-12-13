@@ -5,17 +5,23 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "accuracy_for_classification"
-version = '0.1.1'
-authors = [{ name = "Piotr Kramarczyk", email = "gorgany100@o2.pl" }]
+version = '2.0.0'
+authors = [{ name = "Piotr Kramarczyk", email = "piotrkramarczyk@proton.me" }]
 
-description = "Skrypt oblicza różne wskaźniki dokładności dla klasyfikacji."
+description = "Calculates popular metrics of accuracy for classifying raster images."
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = ["numpy", "pandas", "tabulate", "jinja2", "simpleutils"]
+readme-content-type = "text/markdown"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = ["accuracy", "classification", "raster", "metrics", "GIS"]
+dependencies = [
+    "numpy", "pandas", "tabulate", "jinja2",
+    "shapely", "fiona", "geopandas",
+    "pyproj", "rtree", "rasterio"
+]
 
 
 [project.scripts]
-# lunet - learn unet
 accuracy = "acc.main:main"
 
 
@@ -25,8 +31,5 @@ include-package-data = true
 [tool.setuptools.packages]
 find = {} # Scan the project directory with the default parameters
 
-#[tool.setuptools.packages.find]
-#where = ["src", "data"]
-
-#[tool.setuptools.package-data]
-#data = ["*.txt", "*.md", "*.sqlite"]
+[tool.setuptools.package-data]
+"acc" = ["src/templates/**/*"]

@@ -487,8 +487,21 @@ def paths_decoder(args):
                 "\n\tThe provided argument does not meet the script's "
                 "requirements.\n"
             )
-
     return args
+
+
+def set_root() -> Path:
+    """
+    Determines the root directory of the script.
+
+    Returns:
+        Path: The directory where the `main.py` script is located.
+    """
+    # Pobierz absolutną ścieżkę do bieżącego pliku
+    current_file = Path(__file__).resolve()
+    # Przejdź dwa poziomy wyżej: args_func.py -> args_data -> src -> acc (główna ścieżka)
+    root_dir = current_file.parents[2]
+    return root_dir
 
 
 def args_validation(args, **kwargs):
@@ -517,6 +530,9 @@ def args_validation(args, **kwargs):
         SystemExit: If mutually exclusive arguments are set or required files
                     are missing.
     """
+    ROOT = set_root()
+    args.ROOT = ROOT
+
     if args.save and args.zip:
         msg = """You can choose whether to save '*.csv' files or '*.zip'
         archives to disk (you can't save both)!!!"""
@@ -552,10 +568,13 @@ def args_validation(args, **kwargs):
     # Parse report data if reporting is enabled
     if args.report:
         args.report_data = parse_report_data(args.report_data)
-        template_dir = Path(args.report_data["template_dir"]).resolve()
+        # template_dir = Path(args.report_data["template_dir"]).resolve()
+        template_dir = ROOT / 'src' / 'templates'
         args.report_data["template_dir"] = str(template_dir)
         report_file = Path(args.out_dir) / args.report_data["report_file"]
         args.report_data["report_file"] = str(report_file)
+        css_file = template_dir / "styles.css"
+        args.report_data['css_file'] = str(css_file)
     else:
         del args.report_data
 

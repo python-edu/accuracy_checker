@@ -1,1 +1,5 @@
 global-exclude tests
+include LICENSE
+include README.md
+recursive-include acc/src/templates *
+
