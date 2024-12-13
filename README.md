@@ -234,3 +234,7 @@ These metrics can be conventionally divided into simple metrics (calculated dire
  - MK (markedness (MK) or deltaP):
    >$mk = PPV + NPV - 1$
 
+
+# LICENSE
+The project is licensed under the [MIT](./LICENSE) license.
+For more information, see the `LICENSE` file.
