@@ -13,25 +13,25 @@ error matrix is available, the script can be used to calculate various accuracy 
 
 Running the script, order and layout of input files:
 
-### 1. The input is a single '*.csv' file:
-    - raw data: data2cols.csv or data3cols.csv
-    - confusion matrix: cross_raw.csv, cross.csv or cross_full.csv
-    - binary_cross.csv
+### 1. The input is a single `*.csv` file:
+ - raw data: data2cols.csv or data3cols.csv
+ - confusion matrix: cross_raw.csv, cross.csv or cross_full.csv
+ - binary_cross.csv
 
-      `accuracy file.csv`
-      `accuracy file.csv class_map.json`
+ >- `accuracy file.csv`
+ >- `accuracy file.csv class_map.json`
 
 
 ### 2. Input raster / vector:
-    - an image, after classification - usually of type '*.tif'
-    - reference data: image/mask '*.tif' or vector data e.g. '*.shp', '*.gpkg'
+ - an image, after classification - usually of type `*.tif`
+ - reference data: image/mask `*.tif` or vector data e.g. `*.shp`, `*.gpkg`
 
-      `accuracy raster.tif`
-      `accuracy raster.tif class_map.json`
-      `accuracy raster.tif reference_raster.tif`
-      `accuracy raster.tif reference_raster.tif class_map.json`
-      `accuracy raster.tif reference_vector.shp`
-      `accuracy raster.tif reference_vector.shp class_map.json`
+ >- `accuracy raster.tif`
+ >- `accuracy raster.tif class_map.json`
+ >- `accuracy raster.tif reference_raster.tif`
+ >- `accuracy raster.tif reference_raster.tif class_map.json`
+ >- `accuracy raster.tif reference_vector.shp`
+ >- `accuracy raster.tif reference_vector.shp class_map.json`
 
 
 # Data Help
@@ -61,7 +61,7 @@ Stores classification results in a table (`*.csv`) with 2 or 3 columns:
  - third column: short names of classes e.g. water, wheat etc.
 
  *Input*:
- - columns must be in order [true_values, predicted]
+ - columns must be in order `[true_values, predicted]`
  - column names do not matter (eg. true, true_values, etc)
 
 
