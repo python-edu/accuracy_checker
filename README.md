@@ -223,7 +223,8 @@ These metrics can be conventionally divided into simple metrics (calculated dire
    >$ba = (TPR + TNR) / 2$
 
  - F1 score (is the harmonic mean of precision and sensitivity):
-   >\[ f1 = 2 \cdot (PPV \cdot TPR) / (PPV + TPR) = 2 \cdot TP / (2 \cdot TP + FP + FN) \]
+   >$ f1 = 2 \cdot (PPV \cdot TPR) / (PPV + TPR)$
+   > $ = 2 \cdot TP / (2 \cdot TP + FP + FN) $
 
    >$f1 = 2 \cdot (PPV\cdot TPR) / (PPV+TPR) = (2*TP) / (2*TP+FP+FN)$
 
