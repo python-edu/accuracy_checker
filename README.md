@@ -177,60 +177,60 @@ These metrics can be conventionally divided into simple metrics (calculated dire
 
 3.1. Simple metrics:
 
-    - ACC (accuracy):
-      ACC = (TP+TN)/(P+N) = (TP+TN)/(TP+TN+FP+FN)
+ - ACC (accuracy):
+   >$ACC = (TP+TN) / (P+N) = (TP+TN) / (TP+TN+FP+FN)$
 
-    - PPV (precision or positive predictive value):
-      PPV = TP / (TP + FP)
+ - PPV (precision or positive predictive value):
+   >$PPV = TP / (TP + FP)$
 
-    - PPV (precision or positive predictive):
-      PPV = TP / (TP + FP)
+ - PPV (precision or positive predictive):
+   >$PPV = TP / (TP + FP)$
 
-    - TPR (sensitivity, recall, hit rate, or true positive rate):
-      TPR = TP/P = TP/(TP + FN) = 1 − FNR
+ - TPR (sensitivity, recall, hit rate, or true positive rate):
+   >$TPR = TP / P = TP / (TP + FN) = 1 − FNR$
 
-    - TNR (specificity, selectivity or true negative rate):
-      TNR = TN/N = TN/(TN + FP) = 1 − FPR
+ - TNR (specificity, selectivity or true negative rate):
+   >$TNR = TN / N = TN / (TN + FP) = 1 − FPR$
 
-    - NPV (negative predictive value):
-      NPV = TN/(TN + FN) = 1 − FOR
+ - NPV (negative predictive value):
+   >$NPV = TN / (TN + FN) = 1 − FOR$
 
-    - FNR (miss rate or false negative rate):
-      FNR = FN/P = FN/(FN + TP) = 1 − TPR
+ - FNR (miss rate or false negative rate):
+   >$FNR = FN / P = FN / (FN + TP) = 1 − TPR$
 
-    - FPR (fall-out or false positive rate):
-      FPR = FP/N = FP/(FP + TN) = 1 − TNR
+ - FPR (fall-out or false positive rate):
+   >$FPR = FP / N = FP / (FP + TN) = 1 − TNR$
 
-    - FDR (false discovery rate):
-      FDR = FP/(FP + TP) = 1 − PPV
+ - FDR (false discovery rate):
+   >$FDR = FP / (FP + TP) = 1 − PPV$
 
-    - FOR (false omission rate):
-      FOR = FN/(FN + TN) = 1 − NPV
+ - FOR (false omission rate):
+   >$FOR = FN / (FN + TN) = 1 − NPV$
 
-    - TS / CSI (Threat score (TS) or critical success index (CSI)):
-      TS = TP/(TP + FN + FP
+ - TS / CSI (Threat score (TS) or critical success index (CSI)):
+   >$TS = TP / (TP + FN + FP$
 
-    - MCC (Matthews correlation coefficient):
-      mcc = (TP*TN - FP*FN) / [(TP+FP) * (TP+FN) * (TN+FP) * (TN+FN)]^0.5
+ - MCC (Matthews correlation coefficient):
+   >$mcc = (TP \cdot TN - FP \cdot FN) / ((TP+FP) \cdot (TP+FN) \cdot (TN+FP) \cdot (TN+FN))^{0.5}$
 
 
 3.2. Complex metrics:
 
  - PT (Prevalence Threshold):
-   >$PT = ((TPR*(1 − TNR))^{0.5} + TNR − 1) / (TPR + TNR − 1)$
+   >$PT = ((TPR \cdot (1 − TNR))^{0.5} + TNR − 1) / (TPR + TNR − 1)$
 
  - BA (Balanced accuracy):
-  >$ba = (TPR + TNR) / 2$
+   >$ba = (TPR + TNR) / 2$
 
  - F1 score (is the harmonic mean of precision and sensitivity):
-   >$f1 = 2\cdot (PPV\cdot TPR) / (PPV+TPR) = (2*TP) / (2*TP+FP+FN)$
+   >$f1 = 2 \cdot (PPV\cdot TPR) / (PPV+TPR) = (2*TP) / (2*TP+FP+FN)$
 
  - FM (Fowlkes–Mallows index):
- >  $fm = ((TP/(TP+FP))*(TP/(TP+FN)))^{0.5} = (PPV * TPR)^{0.5}$
+   >$fm = ((TP/(TP+FP)) \cdot (TP/(TP+FN)))^{0.5} = (PPV \cdot TPR)^{0.5}$
 
  - BM (informedness or Fowlkes–Mallows index):
- >  $bm = TPR + TNR - 1$
+   >$bm = TPR + TNR - 1$
 
  - MK (markedness (MK) or deltaP):
- > $mk = PPV + NPV - 1$
+   >$mk = PPV + NPV - 1$
 
