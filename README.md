@@ -216,22 +216,21 @@ These metrics can be conventionally divided into simple metrics (calculated dire
 
 3.2. Complex metrics:
 
-    - PT (Prevalence Threshold):
-      PT = ([TPR*(1 − TNR)]^0.5 + TNR − 1) / (TPR + TNR − 1)
+ >- PT (Prevalence Threshold):
+ >  $PT = ((TPR*(1 − TNR))^{0.5} + TNR − 1) / (TPR + TNR − 1)$
 
-    - BA (Balanced accuracy):
-      ba = (TPR + TNR)/2
+ >- BA (Balanced accuracy):
+ >  $ba = (TPR + TNR)/2$
 
-    - F1 score (is the harmonic mean of precision and sensitivity):
-      f1 = 2*(PPV*TPR)/(PPV+TPR) = (2*TP)/(2*TP+FP+FN)
+ >- F1 score (is the harmonic mean of precision and sensitivity):
+ >  $f1 = 2*(PPV*TPR)/(PPV+TPR) = (2*TP)/(2*TP+FP+FN)$
 
-    - FM (Fowlkes–Mallows index):
-      fm = [(TP/(TP+FP))*(TP/(TP+FN))]^0.5 = (PPV * TPR)^0.5
+ >- FM (Fowlkes–Mallows index):
+ >  $fm = ((TP/(TP+FP))*(TP/(TP+FN)))^{0.5} = (PPV * TPR)^{0.5}$
 
-    - BM (informedness or Fowlkes–Mallows index):
-      bm = TPR + TNR - 1
+ >- BM (informedness or Fowlkes–Mallows index):
+ >  $bm = TPR + TNR - 1$
 
-    - MK (markedness (MK) or deltaP):
-      mk = PPV + NPV - 1
+ >- MK (markedness (MK) or deltaP):
+   $mk = PPV + NPV - 1$
 
->$PT = ((TPR*(1 − TNR))^0.5 + TNR − 1) / (TPR + TNR − 1)$
