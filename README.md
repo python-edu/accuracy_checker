@@ -229,8 +229,8 @@ These metrics can be conventionally divided into simple metrics (calculated dire
    >$f1 = 2 \cdot (PPV\cdot TPR) / (PPV+TPR) = (2*TP) / (2*TP+FP+FN)$
 
 
- - FMxx (Fowlkes–Mallows index):
-   >$f1 = 2 \cdot (PPV)$
+ - F1 score ():
+   >$f1 = 2 \cdot (PPV \cdot TPR) / (PPV + TPR)$
 
  - FM (Fowlkes–Mallows index):
    >$fm = ((TP/(TP+FP)) \cdot (TP/(TP+FN)))^{0.5} = (PPV \cdot TPR)^{0.5}$
