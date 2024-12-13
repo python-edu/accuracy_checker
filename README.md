@@ -151,23 +151,23 @@ Confusion matrix for multi-class classification.
  - FN false negative.
 
 ### 2. Accuracy metrics classically used in remote sensing:
-    - OA (overall_accuracy):
-      OA = sum(TP) / (TP + TN + FP + FN)
+ - OA (overall_accuracy):
+   >$OA = sum(TP) / (TP + TN + FP + FN)$
 
-    - PA (producer_accuracy):
-      PA = TP / (TP + FN)
+ - PA (producer_accuracy):
+   >$PA = TP / (TP + FN)$
 
-    - UA (user_accuracy)
-      UA = TP / (TP + FP)
+ - UA (user_accuracy)
+   >$UA = TP / (TP + FP)$
 
-    - OME (omission errors / errors_of_omission):
-      OME = FN / (TP + FN)
+ - OME (omission errors / errors_of_omission):
+   >$OME = FN / (TP + FN)$
 
-    - CME (errors_of_commision):
-      CME = FP / (TP + FP)
+ - CME (errors_of_commision):
+   >$CME = FP / (TP + FP)$
 
-    - NPV (negative predictive value):
-      NPV = TN/(TN + FN) = 1 − FOR
+ - NPV (negative predictive value):
+   >$NPV = TN/(TN + FN) = 1 − FOR$
 
 ### 3. Classification accuracy metrics found in contemporary scientific publications
  >some metrics overlap with some of the metrics mentioned in point 1.
@@ -229,8 +229,8 @@ These metrics can be conventionally divided into simple metrics (calculated dire
    >$f1 = 2 \cdot (PPV\cdot TPR) / (PPV+TPR) = (2*TP) / (2*TP+FP+FN)$
 
 
- - F1 score ():
-   >$f1 = 2 \cdot (PPV \cdot TPR) / (PPV + TPR)$
+ - F1 score (is the harmonic mean of precision and sensitivity):
+   >$f1 = 2 \cdot (PPV \cdot TPR) / (PPV + TPR) = (2 \cdot TP + FP + FN)$
 
  - FM (Fowlkes–Mallows index):
    >$fm = ((TP/(TP+FP)) \cdot (TP/(TP+FN)))^{0.5} = (PPV \cdot TPR)^{0.5}$
