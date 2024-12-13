@@ -152,7 +152,7 @@ Confusion matrix for multi-class classification.
 
 ### 2. Accuracy metrics classically used in remote sensing:
  - OA (overall_accuracy):
-   >$OA = sum(TP) / (TP + TN + FP + FN)$
+   >$OA = \sum(TP) / (TP + TN + FP + FN)$
 
  - PA (producer_accuracy):
    >$PA = TP / (TP + FN)$
@@ -221,13 +221,6 @@ These metrics can be conventionally divided into simple metrics (calculated dire
 
  - BA (Balanced accuracy):
    >$ba = (TPR + TNR) / 2$
-
- - F1 score (is the harmonic mean of precision and sensitivity):
-   >$ f1 = 2 \cdot (PPV \cdot TPR) / (PPV + TPR)$
-   > $ = 2 \cdot TP / (2 \cdot TP + FP + FN) $
-
-   >$f1 = 2 \cdot (PPV\cdot TPR) / (PPV+TPR) = (2*TP) / (2*TP+FP+FN)$
-
 
  - F1 score (is the harmonic mean of precision and sensitivity):
    >$f1 = 2 \cdot (PPV \cdot TPR) / (PPV + TPR) = (2 \cdot TP + FP + FN)$
