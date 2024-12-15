@@ -17,6 +17,7 @@ Additional help:
 - `accuracy usage help`: displays help about script usage
 - `accuracy data help`: displays help about input data `*.csv`
 - `accuracy metrics help`: displays information about accuracy metrics
+- `accuracy formula help`: help with your own custom calculation formulas 
     """
 ).txt
 
@@ -100,6 +101,12 @@ def parsuj_argumenty():
     name + 'results.zip' suffix, e.g.:
     - cross.csv -> cross_results.zip.""").txt
     parser.add_argument("--zip_name", type=str, help=txt)
+
+    txt = FH("""Enter your own formula to calculate accuracy - a string of \
+            characters without spaces, surrounded by quotation marks, e.g. \
+            "f1=(2*TP)/(2*TP+FP+FN)". Get help: `accuracy formula \
+            help`.""").txt
+    parser.add_argument("-f", "--formula", type=str, help=txt)
 
     txt = FH("Column separator in '*.csv' file (usually ','). Enter it \
             manually if auto-detection doesn't work.").txt

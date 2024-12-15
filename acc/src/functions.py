@@ -3,7 +3,6 @@ import zipfile
 import io
 import pandas as pd
 from pathlib import Path
-from tabulate import tabulate
 
 # local import
 from acc.src import metrics
@@ -144,3 +143,4 @@ def zip_results(zip_path: str, df_dict: dict) -> None:
                 csv_buffer.seek(0)
                 # Add the CSV file to the ZIP archive
                 zipf.writestr(name, csv_buffer.getvalue())
+        # ---

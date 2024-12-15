@@ -9,6 +9,8 @@ from acc.src import functions as fn
 from acc.src.args_data import args_func as afn
 from acc.src.report import AccuracyReport
 from acc.src.verbose import Verbose
+from acc.src.metrics import CustomMetrics
+from acc.src.formula2latex import LatexFormula
 
 
 def main():
@@ -82,6 +84,15 @@ def main():
         ("complex_acc", complex_acc),
         ("average_acc", average_acc),
     ]
+
+    # 5.1 CustomMetrics
+    if hasattr(args, 'formula'):
+        custom = CustomMetrics(binary_obj.binary_cross, args.formula)
+        vb(custom.results, f"CustomMetrics: {args.formula}")
+        custom_metrics = {}
+        custom_metrics['table'] = custom.results
+        data.append(('custom_acc', custom.results))
+
     df_dict = dict(data)
     df_dict = {key: val for key, val in df_dict.items() if val is not None}
     # breakpoint()
@@ -103,8 +114,7 @@ def main():
     # =====================================================================
     if hasattr(args, "report"):
 
-        titles = fn.format_title(
-            [
+        titles = [
                 "Confusion matrix",
                 "Binary confusion matrix",
                 "Remote sensing: classical metrics to evaluate image \
@@ -115,12 +125,19 @@ def main():
                           classification accuracy.",
                 "Machine Learning: Metrics Averages",
             ]
-        )
+
+        titles = fn.format_title(titles)
 
         report_data = args.report_data.copy()
         report_data.update({"script_name": args.script_name})
         report = AccuracyReport(**report_data)
         data_dict = dict(zip(titles, df_dict.values()))
+
+        if hasattr(args, 'formula'):
+            formula = LatexFormula(args.formula)
+            custom_metrics['formula'] = formula.formula
+            data_dict['custom'] = custom_metrics
+
         res = report(data_dict)
         # breakpoint()
         with open(args.report_data["report_file"], "w") as f:

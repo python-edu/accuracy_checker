@@ -5,6 +5,8 @@ body {
     font-size: 120%; /* Powiększenie głównego rozmiaru czcionki o 20% */
     margin: 0;
     padding: 0;
+    margin-left: 1cm; /* Globalny lewy margines */
+    margin-right: 1cm; /* Globalny prawy margines */
 }
 
 h1, h2, h3 {
@@ -23,6 +25,7 @@ table {
     border-collapse: collapse;
     margin: 20px auto; /* Centrowanie tabeli */
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1); /* Lekki cień pod tabelą */
+    table-layout: auto; /* Dostosowanie szerokości kolumn */
 }
 
 table, th, td {
@@ -34,18 +37,29 @@ th {
     font-weight: bold;
     font-size: 1em; /* Rozmiar czcionki nagłówków */
     text-align: center;
+    padding: 8px; /* Dodanie marginesu wewnętrznego */
+    white-space: nowrap; /* Zapobieganie łamaniu tekstu w nagłówkach */
 }
 
 td {
     background-color: #eaeaea; /* Lekko wyszarzone komórki danych */
-    padding: 8px;
+    padding: 8px; /* Dodanie marginesu wewnętrznego */
     text-align: center;
     font-size: 0.85em; /* 15% mniejsze niż nagłówki */
+    white-space: nowrap; /* Zapobieganie łamaniu tekstu */
 }
 
 /* Kontener dla przewijanej tabeli */
 .table-container {
     overflow-x: auto;
     margin-bottom: 1em;
+}
+
+/* Stylowanie równania własnej metryki */
+.formula-container {
+    text-align: center;
+    font-size: 0.75em; /* Zmniejszenie rozmiaru czcionki o 50% */
+    margin: 10px auto;
+    line-height: 1.5; /* Poprawa czytelności */
 }
 

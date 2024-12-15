@@ -51,20 +51,23 @@ class AccuracyReport:
 
     def update_attributes(self, **kwargs: Any) -> None:
         """
-        Update the attributes of the class from a dictionary of keyword arguments.
+        Update the attributes of the class from a dictionary of keyword
+        arguments.
 
         Args:
             kwargs (dict): Dictionary of parameters to update on the class.
         """
         for key, value in kwargs.items():
-            if key in self.__annotations__:  # Check if the key is a defined attribute
+            # Check if the key is a defined attribute
+            if key in self.__annotations__:
                 if key in ("template_dir", "css_file") and value:
                     value = Path(value).resolve()
                 if key == "date" and not value:
                     value = datetime.datetime.now().strftime("%Y-%m-%d")
                 setattr(self, key, value)
 
-        # Reinitialize Jinja2 environment and template if updated attributes affect them
+        # Reinitialize Jinja2 environment and template if updated
+        # attributes affect them
         if self.template_dir and self.template_file:
             self.__post_init__()
 
@@ -77,7 +80,8 @@ class AccuracyReport:
         """
         if not self.css_file or not Path(self.css_file).exists():
             raise FileNotFoundError("CSS file path is invalid or does not "
-            "exist.")
+                                    "exist."
+                                    )
         with open(self.css_file, "r", encoding="utf-8") as fp:
             return fp.read()
 
@@ -97,6 +101,13 @@ class AccuracyReport:
             raise ValueError("Template is not initialized. "
                              "Provide 'template_dir' and 'template_file'.")
 
+        # check if custom formula exist:
+        if 'custom' in data_dict:
+            custom = data_dict.pop('custom')
+            custom['table'] = custom['table'].to_html(index=True)
+        else:
+            custom = None
+
         # Convert DataFrames or similar objects to HTML
         table_data = {title: df.to_html(index=True)
                       for title, df in data_dict.items()
@@ -106,12 +117,14 @@ class AccuracyReport:
         css_content = self._read_css_file()
 
         # Prepare data for the template
-        description_data = {key: getattr(self, key) for key in self.__annotations__.keys()}
-
+        description_data = {
+            key: getattr(self, key)
+            for key in self.__annotations__.keys()
+        }
         # Render the template with data
         return self.template.render(
             description_data=description_data,
             table_data=table_data,
             css_content=css_content,
+            custom=custom
         )
-

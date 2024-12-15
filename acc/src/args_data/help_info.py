@@ -222,3 +222,22 @@ Confusion matrix for multi-class classification.
   - FN (False Negatives): the number of samples of a given class that were incorrectly classified as not belonging to that class
 
 """
+
+info_formula = """
+You can define your own calculation formula:
+
+ - The calculations use the binary_cross matrix table.
+ - The formula must follow Python's arithmetic syntax.
+ - Use the following labels: TP, TN, FP, and FN.
+ - The formula should consist of a left-hand side and a right-hand side: `metric = mathematical operations`. Example:
+   -- mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5
+ - Do not use whitespace (e.g., spaces) in the formula or metric name.
+ - The metric name should be a short string, such as OA, f1, etc.
+ - The pattern entered into the script must be surrounded by quotation marks (single '`'` or double `""`).
+
+Example of use:
+
+    -- `accuracy input_path -f "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
+    -- `accuracy input_path --formula "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
+
+"""

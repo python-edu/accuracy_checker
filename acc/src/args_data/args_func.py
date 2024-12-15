@@ -163,21 +163,22 @@ class FormatHelp:
         - n:  wielkość wcięcia listy: n * ' '
         - w:  długość maksymalna linii
         """
+        # Zamiana linii na listę i usuwanie nadmiarowych spacji
         txt = [line.strip() for line in txt.splitlines()]
         txt = [" ".join(line.split()) for line in txt]
+
+        # Zawijanie długich linii
         txt = [
             textwrap.fill(line, width=width, subsequent_indent=(2 + n) * " ")
             for line in txt
         ]
 
-        # wcina o n*' ' linie
+        # Wcinanie o n*' ' linie, ale pozostawiając '--'
         txt = "\n".join(txt)
         txt = textwrap.indent(
-            txt, n * " ", predicate=lambda line: line.startswith("--")
+            txt, n * " ", predicate=lambda line: line.lstrip().startswith("--")
         )
 
-        txt = txt.replace("-- ", "")
-        txt = txt.replace("--", "")
         return txt
 
     def _format_opis(self, opis, width):
@@ -426,6 +427,9 @@ def paths_decoder(args):
     if "metrics" in paths and "help" in paths:
         setattr(args, "help_metrics", True)
         return args
+    if "formula" in paths and "help" in paths:
+        setattr(args, "help_formula", True)
+        return args
 
     # Handle three paths
     if len(paths) == 3:
@@ -499,7 +503,8 @@ def set_root() -> Path:
     """
     # Pobierz absolutną ścieżkę do bieżącego pliku
     current_file = Path(__file__).resolve()
-    # Przejdź dwa poziomy wyżej: args_func.py -> args_data -> src -> acc (główna ścieżka)
+    # Przejdź dwa poziomy wyżej:
+    # args_func.py -> args_data -> src -> acc (główna ścieżka)
     root_dir = current_file.parents[2]
     return root_dir
 
@@ -543,9 +548,9 @@ def args_validation(args, **kwargs):
     args = paths_decoder(args)
 
     if (hasattr(args, "help_usage")
-        or hasattr(args, "help_data")
-        or hasattr(args, "help_metrics")
-        ):
+            or hasattr(args, "help_data")
+            or hasattr(args, "help_metrics")
+            or hasattr(args, "help_formula")):
         return args
 
     # Handle single `.tif` files by searching for reference files
@@ -639,6 +644,9 @@ def remove_unnecessary_args(args):
     if not args.reversed:
         delattr(args, "reversed")
 
+    if not args.formula:
+        delattr(args, "formula")
+
     return args
 
 
@@ -653,15 +661,17 @@ def display_additional_help(args):
         None: Exits the script after displaying help information.
     """
     if (hasattr(args, "help_usage")
-        or hasattr(args, "help_data")
-        or hasattr(args, "help_metrics")
-        ):
+            or hasattr(args, "help_data")
+            or hasattr(args, "help_metrics")
+            or hasattr(args, "help_formula")):
         if hasattr(args, "help_data"):
             txt = FormatHelp(info.info_data).txt
         elif hasattr(args, "help_metrics"):
             txt = FormatHelp(info.info_metrics).txt
         elif hasattr(args, "help_usage"):
             txt = FormatHelp(info.info_usage).txt
+        elif hasattr(args, "help_formula"):
+            txt = FormatHelp(info.info_formula).txt
 
         print(txt)
         sys.exit()

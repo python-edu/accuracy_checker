@@ -616,7 +616,136 @@ class AccIndex:
         return self.ppv + self.npv - 1
 
 
-###############################################################################
+class CustomMetrics1:
+    def __init__(self, binary_cross, formula, precision=4):
+        self.binary_cross = binary_cross.copy()
+        self.formula = formula
+        self.precision = precision
+        self.results = self._calculate_metric()
+
+    def _prepare_forrmula(self):
+        variable, formula = [x.strip() for x in self.formula.split("=")]
+        return variable, formula
+
+    def _calculate_metric(self):
+        """
+        """
+        results = {}
+        df = self.binary_cross.copy()
+        variable, formula = self._prepare_forrmula()
+
+        for column in df.columns:
+            # Kontekst dla eval
+            context = {key: df.loc[key, column] for key in df.index}
+            context = {key: int(val) for key, val in context.items()}
+            try:
+                # Sprawdzenie, czy denominator w formule jest zerem
+                if "/" in formula:
+                    denominators = [
+                        eval(den, {"__builtins__": None}, context)
+                        for den in formula.split("/")[-1:]
+                    ]
+                    if any(den == 0 for den in denominators):
+                        results[column] = float("nan")
+                        continue
+
+                results[column] = eval(formula,
+                                       {"__builtins__": None},
+                                       context
+                                       )
+            except Exception as e:
+                results[column] = f"Error: {e}"  # Informacja o błędzie
+
+        df = pd.DataFrame(results, index=[variable])
+        df = np.round(df, self.precision)
+        return df
+
+
+class CustomMetrics:
+    """
+    A class to compute custom metrics for binary classification results based
+    on a provided formula.
+
+    Attributes:
+        binary_cross (pd.DataFrame): DataFrame containing binary classification
+                                     results.
+        formula (str): A string defining the metric formula in the format
+                      'variable = expression'.
+        precision (int): Decimal precision for the results. Defaults to 4.
+        results (pd.DataFrame): Computed metric results.
+    """
+
+    def __init__(self, binary_cross, formula, precision=4):
+        """
+        Initialize the CustomMetrics class.
+
+        Args:
+            binary_cross (pd.DataFrame): DataFrame containing binary
+                         classification results.
+            formula (str): Metric formula in the format 'variable = expression'
+            precision (int, optional): Decimal precision for the results.
+                         Defaults to 4.
+        """
+        self.binary_cross = binary_cross.copy()
+        self.formula = formula
+        self.precision = precision
+        self.results = self._calculate_metric()
+
+    def _prepare_formula(self):
+        """
+        Parse the metric formula into a variable name and an evaluable
+        expression.
+
+        Returns:
+            tuple: A tuple containing the variable name (str) and the formula
+                   (str).
+        """
+        variable, formula = [x.strip() for x in self.formula.split("=")]
+        return variable, formula
+
+    def _calculate_metric(self):
+        """
+        Compute the custom metric for each column in the binary_cross
+        DataFrame.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the computed metric values
+                          for each column.
+        """
+        results = {}
+        df = self.binary_cross.copy()
+        variable, formula = self._prepare_formula()
+
+        for column in df.columns:
+            # Create a context dictionary for evaluating the formula
+            context = {key: df.loc[key, column] for key in df.index}
+            context = {key: int(val) for key, val in context.items()}
+            try:
+                # Check for division by zero in the formula
+                if "/" in formula:
+                    denominators = [
+                        eval(den, {"__builtins__": None}, context)
+                        for den in formula.split("/")[-1:]
+                    ]
+                    if any(den == 0 for den in denominators):
+                        # Assign NaN for division by zero errors
+                        results[column] = float("nan")
+                        continue
+
+                results[column] = eval(formula,
+                                       {"__builtins__": None},
+                                       context
+                                       )
+            except Exception as e:
+                # Capture and store any evaluation errors
+                results[column] = f"Error: {e}"
+
+        # Convert results to a DataFrame and round to the specified precision
+        df = pd.DataFrame(results, index=[variable])
+        df = np.round(df, self.precision)
+        return df
+# ---
+
 
 if __name__ == "__main__":
     pass

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"> </script>
     <title>Report</title>
     <style>
         {{ css_content | safe }}
@@ -23,6 +24,21 @@
             {{ table_html | safe }}
         </div>
     {% endfor %}
+
+    {% if custom %}
+    <hr>
+
+    <h2>Custom Accuracy Metric:</h2>
+    <h3>Formula:</h3>
+    <div class="formula-container">
+        {{ custom.formula | safe }}
+    </div>
+
+    <h3>Table:</h3>
+    <div class="table-container">
+      {{ custom.table | safe }}
+    </div>
+    {% endif %}
 </body>
 </html>
 
