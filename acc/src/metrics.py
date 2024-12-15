@@ -700,8 +700,14 @@ class CustomMetrics:
             tuple: A tuple containing the variable name (str) and the formula
                    (str).
         """
-        variable, formula = [x.strip() for x in self.formula.split("=")]
-        return variable, formula
+        formula = self.formula.upper()
+        splited = [x.strip() for x in formula.split("=")]
+        if len(splited) == 2:
+            metric, formula = splited
+        else:
+            formula = splited[0]
+            metric = 'custom'
+        return metric, formula
 
     def _calculate_metric(self):
         """

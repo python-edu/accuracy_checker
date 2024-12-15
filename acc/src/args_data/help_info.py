@@ -93,14 +93,14 @@ These metrics can be conventionally divided into simple metrics \
       -- FOR = FN/(FN + TN) = 1 − NPV
 
    -  TS / CSI (Threat score (TS) or critical success index (CSI)):
-      -- TS = TP/(TP + FN + FP
+      -- TS = TP/(TP + FN + FP)
 
    -  MCC (Matthews correlation coefficient):
       -- mcc = (TP*TN - FP*FN) / [(TP+FP) * (TP+FN) * (TN+FP) * (TN+FN)]^0.5
 
 3.2. Complex metrics:
    - PT (Prevalence Threshold):
-     -- PT = {[TPR*(1 − TNR)]^0.5 + TNR − 1} / (TPR + TNR − 1)
+     -- PT = [(TPR*(1 − TNR))^0.5 + TNR − 1] / (TPR + TNR − 1)
 
    - BA (Balanced accuracy):
      -- ba = (TPR + TNR)/2
