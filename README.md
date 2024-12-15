@@ -42,7 +42,7 @@ Running the script, order and layout of input files:
 
 ### 3. Using the custom calculation formula
 You can enter your own formula to estimate accuracy:
- >accuracy file.csv -f "mcc = (TP*TN - FP*FN) / ((TP+FP) * (TP+FN) * (TN+FP) * (TN+FN))**0.5"
+ >accuracy file.csv -f "ac = (TP*TN - FP*FN) / ((TP+FP) * (TP+FN))**0.5"
 
 
 # Data Help
