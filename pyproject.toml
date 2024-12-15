@@ -16,7 +16,7 @@ keywords = ["accuracy", "classification", "raster", "metrics", "GIS"]
 dependencies = [
     "numpy", "pandas", "tabulate", "jinja2",
     "shapely", "fiona", "geopandas",
-    "pyproj", "rtree", "rasterio"
+    "pyproj", "rtree", "rasterio", "pytexit"
 ]
 
 

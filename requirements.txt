@@ -12,3 +12,4 @@ pyproj
 rtree
 rasterio
 geopandas
+pytexit

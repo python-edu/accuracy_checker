@@ -221,6 +221,34 @@ Confusion matrix for multi-class classification.
   - FP (False Positives): the number of samples incorrectly classified as a given class
   - FN (False Negatives): the number of samples of a given class that were incorrectly classified as not belonging to that class
 
+
+6. Raster data
+The input data can also be raster images and vector data. You can use:
+ - two raster images: classification result and reference image (mask)
+ - raster image and vector data
+
+Raster images should be in `*.tif` format, georeferenced. Different file extensions are accepted:
+ - '*.tif', '*.tiff', '*.TIF', '*.TIFF'
+
+Vector data: two popular formats are accepted:
+ - `*.shp` EERI shapefile spatial data format
+ - `*.gpkg` the GeoPackage (GPKG)
+
+
+6.1 Tip:
+If the reference data file has the same name as the classification result file with an additional
+suffix `_ref`, then you just need to provide the image file address (classification result) as input
+and the script will search for the reference data, e.g.:
+
+Instead of typing:
+ - accuracy my_classification.tif my_classification_ref.tif
+ - accuracy my_classification.tif my_classification_ref.shp
+
+You can:
+ - accuracy my_classification.tif
+ - accuracy my_classification.tif
+
+
 """
 
 info_formula = """
@@ -233,11 +261,11 @@ You can define your own calculation formula:
    -- mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5
  - Do not use whitespace (e.g., spaces) in the formula or metric name.
  - The metric name should be a short string, such as OA, f1, etc.
- - The pattern entered into the script must be surrounded by quotation marks (single '`'` or double `""`).
+ - The pattern entered into the script must be surrounded by quotation marks (single `'` or double `"`).
 
 Example of use:
 
-    -- `accuracy input_path -f "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
-    -- `accuracy input_path --formula "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
+ - `accuracy input_path -f "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
+ - `accuracy input_path --formula "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
 
 """

@@ -10,6 +10,12 @@ error matrix is available, the script can be used to calculate various accuracy 
 
 
 # Usage help
+You can display help by calling the script with the following options:
+ >- `accuracy -h/--help`: general help on how the script works
+ >- `accuracy usage help`: displays help about script usage
+ >- `accuracy data help`: displays help about input data
+ >- `accuracy metrics help`: displays information about accuracy metrics
+ >- `accuracy formula help`: help with your own custom calculation formulas
 
 Running the script, order and layout of input files:
 
@@ -32,6 +38,11 @@ Running the script, order and layout of input files:
  >- `accuracy raster.tif reference_raster.tif class_map.json`
  >- `accuracy raster.tif reference_vector.shp`
  >- `accuracy raster.tif reference_vector.shp class_map.json`
+
+
+### 3. Using the custom calculation formula
+You can enter your own formula to estimate accuracy:
+ >- `accuracy file.csv -f "mcc = (TP*TN - FP*FN) / ((TP+FP) * (TP+FN) * (TN+FP) * (TN+FN))**0.5"`
 
 
 # Data Help
@@ -141,10 +152,38 @@ Confusion matrix for multi-class classification.
  - FN (False Negatives): the number of samples of a given class that were incorrectly classified as not belonging to that class
 
 
+### 6. Raster data
+The input data can also be raster images and vector data. You can use:
+ - two raster images: classification result and reference image (mask)
+ - raster image and vector data
+
+Raster images should be in `*.tif` format, georeferenced. Different file extensions are accepted:
+ - '*.tif', '*.tiff', '*.TIF', '*.TIFF'
+
+Vector data: two popular formats are accepted:
+ - `*.shp` EERI shapefile spatial data format
+ - `*.gpkg` the GeoPackage (GPKG)
+
+**Tip**:
+If the reference data file has the same name as the classification result file with an additional
+suffix `_ref`, then you just need to provide the image file address (classification result) as input
+and the script will search for the reference data, e.g.:
+
+Instead of typing:
+>- accuracy my_classification.tif my_classification_ref.tif
+>- accuracy my_classification.tif my_classification_ref.shp
+
+You can:
+>- accuracy my_classification.tif
+>- accuracy my_classification.tif
+
+
 
 # Metrics help
 
-### 1. The definitions of the metrics are mainly based on the binary error matrix with the following symbols:
+### 1. Symbols:
+
+The definitions of the metrics are mainly based on the binary error matrix with the following symbols:
  - TP true positive
  - TN true negative
  - FP false positive
@@ -233,6 +272,14 @@ These metrics can be conventionally divided into simple metrics (calculated dire
 
  - MK (markedness (MK) or deltaP):
    >$mk = PPV + NPV - 1$
+
+
+# Dependencies
+
+ - (pytexit)[https://pytexit.readthedocs.io/], tabulate, jinja2
+ - numpy, pandas, geopandas
+ - shapely, fiona, pyproj
+ - rasterio, rtree
 
 
 # LICENSE
