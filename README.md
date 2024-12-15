@@ -275,7 +275,7 @@ These metrics can be conventionally divided into simple metrics (calculated dire
 
 # Dependencies
 
- - (pytexit)[https://pytexit.readthedocs.io/], tabulate, jinja2
+ - [pytexit](https://pytexit.readthedocs.io/), tabulate, jinja2
  - numpy, pandas, geopandas
  - shapely, fiona, pyproj
  - rasterio, rtree
