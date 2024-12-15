@@ -174,8 +174,7 @@ Instead of typing:
 >- accuracy my_classification.tif my_classification_ref.shp
 
 You can:
->- accuracy my_classification.tif
->- accuracy my_classification.tif
+>`accuracy my_classification.tif`
 
 
 
