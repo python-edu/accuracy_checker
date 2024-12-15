@@ -158,7 +158,7 @@ The input data can also be raster images and vector data. You can use:
  - raster image and vector data
 
 Raster images should be in `*.tif` format, georeferenced. Different file extensions are accepted:
- - '*.tif', '*.tiff', '*.TIF', '*.TIFF'
+ - `'*.tif', '*.tiff', '*.TIF', '*.TIFF'`
 
 Vector data: two popular formats are accepted:
  - `*.shp` EERI shapefile spatial data format
