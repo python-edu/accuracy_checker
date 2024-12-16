@@ -9,6 +9,23 @@ If data of the type: image after classification, raw classification results (tru
 error matrix is available, the script can be used to calculate various accuracy metrics.
 
 
+# Installation
+
+ 1. Download / clone repository for disk, e.g.:
+   >`git clone https://github.com/RemoteSys/accuracy.git`
+
+ 2. Create a virtual environment, e.g.:
+   >- `cd acc` - enter the cloned repository (folder)
+   >-`python -m venv env --prompt acc`
+
+ 3. Activate the virtual environment and install dependencies, e.g.
+   >- Windows System: `env/Scripts/activate`
+   >- Linux (Debian): `source env/bin/activate`
+
+ 4. Install the script in the environment:
+   >`python -m pip install .`
+
+
 # Usage help
 You can display help by calling the script with the following options:
  >- `accuracy -h/--help`: general help on how the script works
