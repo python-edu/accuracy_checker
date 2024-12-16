@@ -16,7 +16,7 @@ error matrix is available, the script can be used to calculate various accuracy 
 
  2. Create a virtual environment, e.g.:
    >- `cd acc` - enter the cloned repository (folder)
-   >-`python -m venv env --prompt acc`
+   >- `python -m venv env --prompt acc`
 
  3. Activate the virtual environment and install dependencies, e.g.
    >- Windows System: `env/Scripts/activate`
