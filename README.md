@@ -21,6 +21,7 @@ error matrix is available, the script can be used to calculate various accuracy 
  3. Activate the virtual environment and install dependencies, e.g.
    >- Windows System: `env/Scripts/activate`
    >- Linux (Debian): `source env/bin/activate`
+   >- `python -m pip install -r requirements.txt`
 
  4. Install the script in the environment:
    >`python -m pip install .`
