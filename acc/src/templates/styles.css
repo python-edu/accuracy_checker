@@ -1,12 +1,12 @@
-/* Ustawienia koloru tła i globalne */
+/* Globalne ustawienia */
 body {
-    background-color: #b3ad8d; /* Lekko przyciemniony khaki */
+    background-color: #b3ad8d;
     font-family: Arial, sans-serif;
-    font-size: 120%; /* Powiększenie głównego rozmiaru czcionki o 20% */
+    font-size: 120%;
     margin: 0;
     padding: 0;
-    margin-left: 1cm; /* Globalny lewy margines */
-    margin-right: 1cm; /* Globalny prawy margines */
+    margin-left: 2cm;
+    margin-right: 2cm;
 }
 
 h1, h2, h3 {
@@ -17,49 +17,57 @@ h3 {
     margin-top: 1em;
 }
 
-/* Stylowanie tabel */
+/* Kontener dla tabeli */
+.table-container {
+    display: flex; /* Flexbox dla wyrównania */
+    justify-content: flex-start; /* Tabela wyrównana do lewej */
+    padding-left: 5cm; /* Przesunięcie tabeli o 3 cm */
+    padding-right: 1cm; /* Zachowanie marginesu z prawej */
+    margin: 20px 0; /* Odstęp między kontenerem a resztą zawartości */
+}
+
+/* Stylowanie tabeli */
 table {
-    width: auto; /* Automatyczna szerokość */
-    max-width: 100%; /* Maksymalnie do szerokości strony */
-    background-color: #f2f2f2; /* Delikatnie wyszarzone tło tabeli */
+    width: auto;
+    max-width: 100%;
+    background-color: #f2f2f2;
     border-collapse: collapse;
-    margin: 20px auto; /* Centrowanie tabeli */
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1); /* Lekki cień pod tabelą */
-    table-layout: auto; /* Dostosowanie szerokości kolumn */
+    margin: 0; /* Wyłącz automatyczne centrowanie tabeli */
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+    table-layout: auto;
 }
 
 table, th, td {
-    border: 1px solid #888; /* Lekko pogrubione obramowanie */
+    border: 1px solid #888;
 }
 
 th {
-    background-color: #d9d7bd; /* Przywrócony, mniej jasny odcień dla nagłówków tabel */
+    background-color: #d9d7bd;
     font-weight: bold;
-    font-size: 1em; /* Rozmiar czcionki nagłówków */
+    font-size: 1em;
     text-align: center;
-    padding: 8px; /* Dodanie marginesu wewnętrznego */
-    white-space: nowrap; /* Zapobieganie łamaniu tekstu w nagłówkach */
+    padding: 8px;
+    white-space: nowrap;
 }
 
 td {
-    background-color: #eaeaea; /* Lekko wyszarzone komórki danych */
-    padding: 8px; /* Dodanie marginesu wewnętrznego */
+    background-color: #eaeaea;
+    padding: 8px;
     text-align: center;
-    font-size: 0.85em; /* 15% mniejsze niż nagłówki */
-    white-space: nowrap; /* Zapobieganie łamaniu tekstu */
+    font-size: 0.85em;
+    white-space: nowrap;
 }
 
-/* Kontener dla przewijanej tabeli */
-.table-container {
-    overflow-x: auto;
-    margin-bottom: 1em;
-}
 
 /* Stylowanie równania własnej metryki */
 .formula-container {
-    text-align: center;
-    font-size: 0.75em; /* Zmniejszenie rozmiaru czcionki o 50% */
-    margin: 10px auto;
+    display: flex; /* Użycie Flexbox do wyrównania */
+    justify-content: flex-start; /* Wyrównanie do lewej */
+    padding-left: 5cm; /* Przesunięcie o 3 cm od lewej krawędzi */
+    padding-right: 1cm; /* Opcjonalny margines z prawej */
+    margin: 20px 0; /* Odstęp od elementów powyżej i poniżej */
+    font-size: 0.75em; /* Zmniejszenie rozmiaru czcionki */
     line-height: 1.5; /* Poprawa czytelności */
 }
+
 
