@@ -474,14 +474,26 @@ class CrossMatrixValidator:
         if self.type_cross == "full":
             data = data.iloc[:-1, :-1]
 
-        try:
-            if self.map_labels:
+        data_sq = CrossMatrixValidator._make_matrix_square(data, self.scheme)
+
+        if self.map_labels:
+            try:
                 data.columns = [self.map_labels[key] for key in data.columns]
                 data.index = [self.map_labels[key] for key in data.index]
-        except KeyError:
-            raise ValueError("Provided labels do not match the data classes.")
-
-        data_sq = CrossMatrixValidator._make_matrix_square(data, self.scheme)
+            except KeyError:
+                try:
+                    data.columns = [
+                        self.map_labels[key] 
+                        for key in range(1, data.shape[1] + 1)
+                    ]
+                    data.index = [
+                            self.map_labels[key]
+                            for key in range(data.shape[0] + 1)
+                            ]
+                except KeyError:
+                    print("Unable to fit class map to data. "
+                          "Row and column names remain unchanged."
+                          )
 
         if self.type_cross == "cross":
             self.cross_as = data
@@ -489,6 +501,7 @@ class CrossMatrixValidator:
         elif self.type_cross == "full":
             self.cross_full_as = self._add_sums_cols_rows(data)
             self.cross_full = self._add_sums_cols_rows(data_sq)
+        # breakpoint()
 
     def _raw_from_cross(self):
         """
