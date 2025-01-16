@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"> </script>
+    <title>Report</title>
+    <style>
+        /* Globalne ustawienia */
+body {
+    background-color: #b3ad8d;
+    font-family: Arial, sans-serif;
+    font-size: 120%;
+    margin: 0;
+    padding: 0;
+    margin-left: 2cm;
+    margin-right: 2cm;
+}
+
+h1, h2, h3 {
+    color: #333;
+}
+
+h3 {
+    margin-top: 1em;
+}
+
+/* Kontener dla tabeli */
+.table-container {
+    display: flex; /* Flexbox dla wyrównania */
+    justify-content: flex-start; /* Tabela wyrównana do lewej */
+    padding-left: 5cm; /* Przesunięcie tabeli o 3 cm */
+    padding-right: 1cm; /* Zachowanie marginesu z prawej */
+    margin: 20px 0; /* Odstęp między kontenerem a resztą zawartości */
+}
+
+/* Stylowanie tabeli */
+table {
+    width: auto;
+    max-width: 100%;
+    background-color: #f2f2f2;
+    border-collapse: collapse;
+    margin: 0; /* Wyłącz automatyczne centrowanie tabeli */
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+    table-layout: auto;
+}
+
+table, th, td {
+    border: 1px solid #888;
+}
+
+th {
+    background-color: #d9d7bd;
+    font-weight: bold;
+    font-size: 1em;
+    text-align: center;
+    padding: 8px;
+    white-space: nowrap;
+}
+
+td {
+    background-color: #eaeaea;
+    padding: 8px;
+    text-align: center;
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+
+/* Stylowanie równania własnej metryki */
+.formula-container {
+    display: flex; /* Użycie Flexbox do wyrównania */
+    justify-content: flex-start; /* Wyrównanie do lewej */
+    padding-left: 5cm; /* Przesunięcie o 3 cm od lewej krawędzi */
+    padding-right: 1cm; /* Opcjonalny margines z prawej */
+    margin: 20px 0; /* Odstęp od elementów powyżej i poniżej */
+    font-size: 0.75em; /* Zmniejszenie rozmiaru czcionki */
+    line-height: 1.5; /* Poprawa czytelności */
+}
+
+
+
+    </style>
+</head>
+<body>
+    <h1>Image Classification Accuracy Assessment</h1>
+    <p><strong>Data generowania:</strong> 2025-01-16</p>
+    <p><strong>Nazwa skryptu:</strong> /home/u1/03_Programowanie/03Python/skrypty/acc/acc/main.py</p>
+    <p><strong>Opis danych:</strong> Research project.</p>
+    
+    <hr>
+
+    <h2>Tabele:</h2>
+    
+        <h3>1. Confusion matrix</h3>
+        <div class="table-container">
+            <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>predicted</th>
+      <th>water</th>
+      <th>building</th>
+      <th>grass</th>
+      <th>grain</th>
+      <th>coniferous</th>
+      <th>sums</th>
+    </tr>
+    <tr>
+      <th>true</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>water</th>
+      <td>14270</td>
+      <td>712</td>
+      <td>696</td>
+      <td>2178</td>
+      <td>2119</td>
+      <td>19975</td>
+    </tr>
+    <tr>
+      <th>building</th>
+      <td>903</td>
+      <td>7236</td>
+      <td>1882</td>
+      <td>1805</td>
+      <td>214</td>
+      <td>12040</td>
+    </tr>
+    <tr>
+      <th>grass</th>
+      <td>162</td>
+      <td>1665</td>
+      <td>8839</td>
+      <td>2936</td>
+      <td>68</td>
+      <td>13670</td>
+    </tr>
+    <tr>
+      <th>grain</th>
+      <td>4544</td>
+      <td>1798</td>
+      <td>3884</td>
+      <td>26910</td>
+      <td>1119</td>
+      <td>38255</td>
+    </tr>
+    <tr>
+      <th>coniferous</th>
+      <td>1142</td>
+      <td>34</td>
+      <td>922</td>
+      <td>370</td>
+      <td>2912</td>
+      <td>5380</td>
+    </tr>
+    <tr>
+      <th>sums</th>
+      <td>21021</td>
+      <td>11445</td>
+      <td>16223</td>
+      <td>34199</td>
+      <td>6432</td>
+      <td>89320</td>
+    </tr>
+  </tbody>
+</table>
+        </div>
+    
+        <h3>2. Binary confusion matrix</h3>
+        <div class="table-container">
+            <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>water</th>
+      <th>building</th>
+      <th>grass</th>
+      <th>grain</th>
+      <th>coniferous</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>TP</th>
+      <td>14270</td>
+      <td>7236</td>
+      <td>8839</td>
+      <td>26910</td>
+      <td>2912</td>
+    </tr>
+    <tr>
+      <th>TN</th>
+      <td>62594</td>
+      <td>73071</td>
+      <td>68266</td>
+      <td>43776</td>
+      <td>80420</td>
+    </tr>
+    <tr>
+      <th>FP</th>
+      <td>6751</td>
+      <td>4209</td>
+      <td>7384</td>
+      <td>7289</td>
+      <td>3520</td>
+    </tr>
+    <tr>
+      <th>FN</th>
+      <td>5705</td>
+      <td>4804</td>
+      <td>4831</td>
+      <td>11345</td>
+      <td>2468</td>
+    </tr>
+  </tbody>
+</table>
+        </div>
+    
+        <h3>3. Remote sensing: classical metrics to evaluate image classification accuracy.</h3>
+        <div class="table-container">
+            <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>OA</th>
+      <th>PA</th>
+      <th>UA</th>
+      <th>OME</th>
+      <th>CME</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>water</th>
+      <td>0.6736</td>
+      <td>0.7144</td>
+      <td>0.6788</td>
+      <td>0.2856</td>
+      <td>0.3212</td>
+    </tr>
+    <tr>
+      <th>building</th>
+      <td>0.6736</td>
+      <td>0.6010</td>
+      <td>0.6322</td>
+      <td>0.3990</td>
+      <td>0.3678</td>
+    </tr>
+    <tr>
+      <th>grass</th>
+      <td>0.6736</td>
+      <td>0.6466</td>
+      <td>0.5448</td>
+      <td>0.3534</td>
+      <td>0.4552</td>
+    </tr>
+    <tr>
+      <th>grain</th>
+      <td>0.6736</td>
+      <td>0.7034</td>
+      <td>0.7869</td>
+      <td>0.2966</td>
+      <td>0.2131</td>
+    </tr>
+    <tr>
+      <th>coniferous</th>
+      <td>0.6736</td>
+      <td>0.5413</td>
+      <td>0.4527</td>
+      <td>0.4587</td>
+      <td>0.5473</td>
+    </tr>
+  </tbody>
+</table>
+        </div>
+    
+        <h3>4. Machine learning: `simple` metrics for assessing image classification accuracy.</h3>
+        <div class="table-container">
+            <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>acc</th>
+      <th>fdr</th>
+      <th>fnr</th>
+      <th>foRate</th>
+      <th>fpr</th>
+      <th>mcc</th>
+      <th>npv</th>
+      <th>ppv</th>
+      <th>tnr</th>
+      <th>tpr</th>
+      <th>ts</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>water</th>
+      <td>0.8605</td>
+      <td>0.3212</td>
+      <td>0.2856</td>
+      <td>0.0835</td>
+      <td>0.0974</td>
+      <td>0.6061</td>
+      <td>0.9165</td>
+      <td>0.6788</td>
+      <td>0.9026</td>
+      <td>0.7144</td>
+      <td>0.5339</td>
+    </tr>
+    <tr>
+      <th>building</th>
+      <td>0.8991</td>
+      <td>0.3678</td>
+      <td>0.3990</td>
+      <td>0.0617</td>
+      <td>0.0545</td>
+      <td>0.5584</td>
+      <td>0.9383</td>
+      <td>0.6322</td>
+      <td>0.9455</td>
+      <td>0.6010</td>
+      <td>0.4453</td>
+    </tr>
+    <tr>
+      <th>grass</th>
+      <td>0.8632</td>
+      <td>0.4552</td>
+      <td>0.3534</td>
+      <td>0.0661</td>
+      <td>0.0976</td>
+      <td>0.5127</td>
+      <td>0.9339</td>
+      <td>0.5448</td>
+      <td>0.9024</td>
+      <td>0.6466</td>
+      <td>0.4198</td>
+    </tr>
+    <tr>
+      <th>grain</th>
+      <td>0.7914</td>
+      <td>0.2131</td>
+      <td>0.2966</td>
+      <td>0.2058</td>
+      <td>0.1427</td>
+      <td>0.5708</td>
+      <td>0.7942</td>
+      <td>0.7869</td>
+      <td>0.8573</td>
+      <td>0.7034</td>
+      <td>0.5909</td>
+    </tr>
+    <tr>
+      <th>coniferous</th>
+      <td>0.9330</td>
+      <td>0.5473</td>
+      <td>0.4587</td>
+      <td>0.0298</td>
+      <td>0.0419</td>
+      <td>0.4596</td>
+      <td>0.9702</td>
+      <td>0.4527</td>
+      <td>0.9581</td>
+      <td>0.5413</td>
+      <td>0.3272</td>
+    </tr>
+  </tbody>
+</table>
+        </div>
+    
+        <h3>5. Machine learning: `composite` metrics for assessing image classification accuracy.</h3>
+        <div class="table-container">
+            <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ba</th>
+      <th>bm</th>
+      <th>f1</th>
+      <th>fm</th>
+      <th>mk</th>
+      <th>pt</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>water</th>
+      <td>0.8085</td>
+      <td>0.6170</td>
+      <td>0.6961</td>
+      <td>0.6964</td>
+      <td>0.5953</td>
+      <td>0.2697</td>
+    </tr>
+    <tr>
+      <th>building</th>
+      <td>0.7732</td>
+      <td>0.5465</td>
+      <td>0.6162</td>
+      <td>0.6164</td>
+      <td>0.5705</td>
+      <td>0.2314</td>
+    </tr>
+    <tr>
+      <th>grass</th>
+      <td>0.7745</td>
+      <td>0.5490</td>
+      <td>0.5914</td>
+      <td>0.5935</td>
+      <td>0.4787</td>
+      <td>0.2798</td>
+    </tr>
+    <tr>
+      <th>grain</th>
+      <td>0.7804</td>
+      <td>0.5607</td>
+      <td>0.7428</td>
+      <td>0.7440</td>
+      <td>0.5811</td>
+      <td>0.3105</td>
+    </tr>
+    <tr>
+      <th>coniferous</th>
+      <td>0.7497</td>
+      <td>0.4994</td>
+      <td>0.4931</td>
+      <td>0.4950</td>
+      <td>0.4229</td>
+      <td>0.2177</td>
+    </tr>
+  </tbody>
+</table>
+        </div>
+    
+        <h3>6. Machine Learning: Metrics Averages</h3>
+        <div class="table-container">
+            <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>acc</th>
+      <td>0.8694</td>
+    </tr>
+    <tr>
+      <th>fdr</th>
+      <td>0.3809</td>
+    </tr>
+    <tr>
+      <th>fnr</th>
+      <td>0.3587</td>
+    </tr>
+    <tr>
+      <th>foRate</th>
+      <td>0.0894</td>
+    </tr>
+    <tr>
+      <th>fpr</th>
+      <td>0.0868</td>
+    </tr>
+    <tr>
+      <th>mcc</th>
+      <td>0.5415</td>
+    </tr>
+    <tr>
+      <th>npv</th>
+      <td>0.9106</td>
+    </tr>
+    <tr>
+      <th>ppv</th>
+      <td>0.6191</td>
+    </tr>
+    <tr>
+      <th>tnr</th>
+      <td>0.9132</td>
+    </tr>
+    <tr>
+      <th>tpr</th>
+      <td>0.6413</td>
+    </tr>
+    <tr>
+      <th>ts</th>
+      <td>0.4634</td>
+    </tr>
+    <tr>
+      <th>ba</th>
+      <td>0.7773</td>
+    </tr>
+    <tr>
+      <th>bm</th>
+      <td>0.5545</td>
+    </tr>
+    <tr>
+      <th>f1</th>
+      <td>0.6279</td>
+    </tr>
+    <tr>
+      <th>fm</th>
+      <td>0.6291</td>
+    </tr>
+    <tr>
+      <th>mk</th>
+      <td>0.5297</td>
+    </tr>
+    <tr>
+      <th>pt</th>
+      <td>0.2618</td>
+    </tr>
+  </tbody>
+</table>
+        </div>
+    
+
+    
+</body>
+</html>

@@ -206,7 +206,9 @@ The definitions of the metrics are mainly based on the binary error matrix with 
  - FP false positive
  - FN false negative.
 
+
 ### 2. Accuracy metrics classically used in remote sensing:
+
  - OA (overall_accuracy):
    >$OA = \sum(TP) / (TP + TN + FP + FN)$
 
@@ -225,7 +227,9 @@ The definitions of the metrics are mainly based on the binary error matrix with 
  - NPV (negative predictive value):
    >$NPV = TN/(TN + FN) = 1 − FOR$
 
+
 ### 3. Classification accuracy metrics found in contemporary scientific publications
+
  >some metrics overlap with some of the metrics mentioned in point 1.
 
 These metrics can be conventionally divided into simple metrics (calculated directly from the TP, TN, FP and FN values) and
@@ -237,9 +241,6 @@ These metrics can be conventionally divided into simple metrics (calculated dire
    >$ACC = (TP+TN) / (P+N) = (TP+TN) / (TP+TN+FP+FN)$
 
  - PPV (precision or positive predictive value):
-   >$PPV = TP / (TP + FP)$
-
- - PPV (precision or positive predictive):
    >$PPV = TP / (TP + FP)$
 
  - TPR (sensitivity, recall, hit rate, or true positive rate):
