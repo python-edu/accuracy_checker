@@ -13,7 +13,7 @@ from acc.src.metrics import CustomMetrics
 from acc.src.formula2latex import LatexFormula
 
 
-def main():
+def get_args():
     parser = parsuj_argumenty()
 
     # 1. Obsługa argumentów linii poleceń
@@ -23,6 +23,19 @@ def main():
 
     # 1a. It will display additional help and terminate the script
     afn.display_additional_help(args)
+    return args
+
+
+def main(args):
+    # parser = parsuj_argumenty()
+
+    # # 1. Obsługa argumentów linii poleceń
+    # # =====================================================================
+    # args = parser.parse_args()
+    # args = afn.args_validation(args, **{"script_name": __file__})
+
+    # 1a. It will display additional help and terminate the script
+    # afn.display_additional_help(args)
 
     # --- scans data and checks data type ---
     args = data_recognition.recognize_data_type(args)
@@ -146,7 +159,15 @@ def main():
         vb(args.report_data["report_file"], "An html report was generated:")
 
 
+def cli():
+    """
+    Funkcja do uruchamiania main() w skrypcie.
+    """
+    args = get_args()
+    main(args)
+
+
 # ---
 
 if __name__ == "__main__":
-    main()
+    cli()

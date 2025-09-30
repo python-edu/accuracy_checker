@@ -1,39 +1,55 @@
-info_usage = """
-Running the script, order and layout of input files:
+import re
 
-1. The input is a single '*.csv' file:
+
+info_usage = """
+1. Launching the program
+The program is started from the command line. It can be run in two ways:
+
+  - with a simple GUI - may not expose the full functionality
+  - as a console (CLI) script - provides full functionality
+
+2. GUI
+Type in the terminal:
+  - `streamlit run app.py`
+
+3. CLI
+3.1. The input is a single '*.csv' file:
     - raw data: data2cols.csv or data3cols.csv
     - confusion matrix: cross_raw.csv, cross.csv or cross_full.csv
     - binary_cross.csv
 
-    -- `accuracy file.csv`
-    -- `accuracy file.csv class_map.json`
+  Examples of running a script:
+    - `accuracy file.csv`
+    - `accuracy file.csv class_map.json`
 
 
-2. Input data:
+3.2. Input data:
     - an image, after classification - usually of type '*.tif'
     - reference data: image/mask '*.tif' or vector data e.g. '*.shp', '*.gpkg'
 
-    -- `accuracy raster.tif`
-    -- `accuracy raster.tif class_map.json`
+  Examples of running a script:
+    - `accuracy raster.tif`
+    - `accuracy raster.tif class_map.json`
 
-    -- `accuracy raster.tif reference_raster.tif`
-    -- `accuracy raster.tif reference_raster.tif class_map.json`
+    - `accuracy raster.tif reference_raster.tif`
+    - `accuracy raster.tif reference_raster.tif class_map.json`
 
-    -- `accuracy raster.tif reference_vector.shp`
-    -- `accuracy raster.tif reference_vector.shp class_map.json`
+    - `accuracy raster.tif reference_vector.shp`
+    - `accuracy raster.tif reference_vector.shp class_map.json`
 """
 
 
 info_metrics = """
-1. The definitions of the metrics are mainly based on the binary \
+1. Notacja binarna
+The definitions of the metrics are mainly based on the binary \
 error matrix with the following symbols:
-  - TP true positive
-  - TN true negative
-  - FP false positive
-  - FN false negative.
+  - `TP` true positive
+  - `TN` true negative
+  - `FP` false positive
+  - `FN` false negative.
 
-2. Accuracy metrics classically used in remote sensing:
+2. Remote sensing 
+Accuracy metrics classically used in remote sensing:
   - OA (overall_accuracy):
    -- OA = sum(TP) / (TP + TN + FP + FN)
 
@@ -52,12 +68,13 @@ error matrix with the following symbols:
   -  NPV (negative predictive value):
      -- NPV = TN/(TN + FN) = 1 − FOR
 
-3. Classification accuracy metrics found in contemporary scientific \
+3. Contemporary classification accuracy metrics 
+Classification accuracy metrics found in contemporary scientific \
 publications (some metrics overlap with some of the metrics mentioned in \
-point 1).
+`point 2`).
 
-These metrics can be conventionally divided into simple metrics \
-(calculated directly from the TP, TN, FP and FN values) and complex metrics \
+These metrics can be conventionally divided into `simple` metrics \
+(calculated directly from the TP, TN, FP and FN values) and `complex` metrics \
 (calculated using simple metrics).
 
 3.1. Simple metrics:
@@ -172,7 +189,6 @@ Confusion matrix for multi-class classification:
   Default layout is:
     - rows: True classes (true labels).
     - columns: Predicted classes (predicted labels)
-  
 
        |            | water | forest | urban | ...
        |------------+-------+--------+-------+-----
@@ -191,7 +207,6 @@ Full confusion matrix for multi-class classification:
   Default layout is:
     - rows: True classes (true labels).
     - columns: Predicted classes (predicted labels)
-
 
        |            | water | forest | urban | ... |  sums  |
        |------------+-------+--------+-------+-----|--------|
@@ -252,6 +267,7 @@ You can:
 """
 
 info_formula = """
+1. Calculation formula
 You can define your own calculation formula:
 
  - The calculations use the binary_cross matrix table.
@@ -263,9 +279,99 @@ You can define your own calculation formula:
  - The metric name should be a short string, such as OA, f1, etc.
  - The pattern entered into the script must be surrounded by quotation marks (single `'` or double `"`).
 
-Example of use:
+2. Example of script use:
 
- - `accuracy input_path -f "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
- - `accuracy input_path --formula "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
+ - accuracy input_path -f "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
+ - accuracy input_path --formula "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
 
 """
+
+
+# funkcje do przetwarzania tekstu pomocy dla streamlit (uproszczony
+# markdown)
+
+def mk_tables(txt: list[str]) -> list[str]:
+    """Przetwarza wiersze zawierające tabele, czyli zaczynające się od `|`."""
+    res = []
+    txt = txt[:]
+
+    # start: False - wiersz to nie tabela, True - to tabela
+    start = False
+
+    for line in txt:
+        if line.startswith('|'):
+            # początek tabeli
+            if not start:
+                start = True
+                res.append("  ```bash")
+                
+            line = f"    {line}"
+            res.append(line)
+        else:
+            # breakpoint()
+            if start:
+                start = False
+                res.append("  ```")
+            res.append(line)
+    
+    return res
+
+
+def mk_equations(txt: list[str]) -> list[str]:
+    """Przetwarza linie zawierające równania, czyli wiersze zaczynające
+    się od `--`.
+    """
+    res = []
+    txt = txt[:]
+
+    for line in txt:
+        if line.startswith('--'):
+            line = line.replace('--', '')
+            line = line.strip()
+            line = '\n' + f"$$\n{line}\n$$"
+        res.append(line)
+    return res
+
+
+def get_index(txt: list[str], pattern: str) -> list[str]:
+    """Przechodzi linia po linii i wyszukują tę linię która pasuje do
+    wzorca. Zwraca index tej linii.
+    """
+    idx = None
+    txt = txt[:]
+
+    for i, line in enumerate(txt):
+        if re.search(pattern, line):
+            idx = i
+    return idx
+
+
+def parse_help_text(txt):
+    """Funkcja przetwarza tekst pomocy na markdown używany w streamlit."""
+    txt = txt.splitlines()
+    txt = [line.strip() for line in txt]
+    if txt[0] == '':
+        txt = txt[1:]
+
+    txt = [f"#### {line}" if re.search(r'^\d\.\d', line) else
+           line for line in txt]
+    txt = [f"### {line}" if re.search(r'^\d', line) else line for line in txt]
+    txt = ['\n' if line == '' else line for line in txt]
+
+    # txt = [f"\t{line}" if line.startswith('|') else line for line in txt]
+    txt = mk_tables(txt)
+    
+    # przetwarza równania (linie zaczynają si e od --) 
+    txt = mk_equations(txt)
+    txt = [f"  {line}" if line.startswith('-') else line for line in txt]
+
+
+    # format jednej konkretnej linii
+    # pat = "- '*.tif', '*.tiff', '*.TIF', '*.TIFF'"
+    pat = r"\*\.TIFF"
+    idx = get_index(txt, pat)
+    if idx is not None:
+        txt[idx] =  "\n  ```bash \n  #'*.tif', '*.tiff', '*.TIF', '*.TIFF'\n```"
+    
+    txt = '\n'.join(txt)
+    return txt

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "accuracy"
-version = '2.0.0'
+version = '3.0.0'
 authors = [{ name = "Piotr Kramarczyk", email = "piotrkramarczyk@proton.me" }]
 
 description = "Calculates popular metrics of accuracy for classifying raster images."
@@ -16,12 +16,12 @@ keywords = ["accuracy", "classification", "raster", "metrics", "GIS"]
 dependencies = [
     "numpy", "pandas", "tabulate", "jinja2",
     "shapely", "fiona", "geopandas",
-    "pyproj", "rtree", "rasterio", "pytexit"
+    "pyproj", "rtree", "rasterio", "pytexit", "streamlit"
 ]
 
 
 [project.scripts]
-accuracy = "acc.main:main"
+accuracy = "acc.main:cli"
 
 
 [tool.setuptools]
