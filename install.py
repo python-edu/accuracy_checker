@@ -242,11 +242,12 @@ def uninstall_scripts():
     for file in (WRAP_CLI, WRAP_GUI):
         if file.exists():
             file.unlink()
-            print("  - {file.name} was removed") 
+            print(f"  - {file.name} was removed") 
 
     # usuwanie katalogu bin po wraperach jeśli jest pusty
     try:
         BIN_DIR.rmdir()
+        print(f"  - '{BIN_DIR}' was empty and was removed!")
     except Exception:
         pass
 
