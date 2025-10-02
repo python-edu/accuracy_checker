@@ -1,7 +1,7 @@
 import os
 import sys
 import venv
-import platform
+# import platform
 import subprocess
 import shutil
 import argparse
@@ -10,15 +10,22 @@ import tempfile
 from pathlib import Path
 
 # --- globalne
-SYSTEM = platform.system()
+# if sys.platform == "darwin":
+#     # macOS
+# elif sys.platform.startswith("linux"):
+#     # Linux
+# elif sys.platform == "win32":
+#     # Windows
+SYSTEM = sys.platform
 ROOT = Path(__file__).resolve().parent
 ENV_DIR = ROOT / 'env'
 REQUIREMENTS = ROOT / 'requirements.txt'
 # TOML = ROOT / "pyproject.toml"
 ACCURACY = 'accuracy'
 ACCURACYGUI = 'accuracy_gui'
+PATH = os.getenv('PATH')
 
-if SYSTEM == 'Windows':
+if SYSTEM == 'win32':
     import winreg as wr
     PYTHON = 'Scripts/python.exe'
     ACCURACY = f"Scripts/{ACCURACY}.exe"
@@ -37,6 +44,12 @@ else:
     ACCURACYGUI = f"bin/{ACCURACYGUI}"
     BIN_DIR = Path.home() / ".local" / "bin"
     BIN_DIR.mkdir(parents=True, exist_ok=True)
+    BLOCK = (
+        "\n\n# >>> start acc/install.py PATH >>>\n"
+        'export PATH="$HOME/.local/bin:$PATH"\n'
+        "# <<< end acc/install.py PATH <<<\n"
+    )
+
 
 PYTHON = (ENV_DIR / PYTHON).resolve()
 
@@ -45,7 +58,7 @@ ACCURACY = (ENV_DIR / ACCURACY).resolve()
 ACCURACYGUI = (ENV_DIR / ACCURACYGUI).resolve() 
 
 # ścieżki wrapperów + ich zawartość (różne dla Windows/Posix)
-if SYSTEM == 'Windows':
+if SYSTEM == 'win32':
     WRAP_CLI = BIN_DIR / 'accuracy.cmd'
     WRAP_GUI = BIN_DIR / 'accuracy_gui.cmd'
     SH_CLI = f'@echo off\r\n"{ACCURACY}" %*\r\n'
@@ -55,6 +68,14 @@ else:
     WRAP_GUI = BIN_DIR / 'accuracy_gui'
     SH_CLI = f'#!/usr/bin/env sh\nexec "{ACCURACY}" "$@"\n'
     SH_GUI = f'#!/usr/bin/env sh\nexec "{ACCURACYGUI}" "$@"\n'
+
+# Wybór plików `rc` użytkownika
+if SYSTEM == "darwin":    # macOS (zsh)
+    RC_FILES = [Path.home()/".zprofile", Path.home()/".zshrc"]
+
+elif SYSTEM == "linux":   # Linux (bash)
+    RC_FILES = [Path.home()/".profile", Path.home()/".bashrc"]
+
 
 
 # --- funkcje - parser agrumentów
@@ -122,15 +143,38 @@ def create_wrapper_files():
     WRAP_CLI.write_text(SH_CLI, encoding='utf-8', newline='\n')
     WRAP_GUI.write_text(SH_GUI, encoding='utf-8', newline='\n')
     # na POSIX wrappery muszą być wykonywalne
-    if SYSTEM != 'Windows':
+    if SYSTEM != 'win32':
         WRAP_CLI.chmod(0o755)
         WRAP_GUI.chmod(0o755)
+
+
+def add_path_to_rcfiles():
+    """Dodaje wpis do plików rc (np. .bashrc). Wpis dodaje ścieżkę do katalogu
+    ~/.profile/bin do PATH.
+    """
+    txt = r".local/bin"
+    if txt in PATH:
+        print(f"  - {txt} already present in PATH!")
+        return
+    
+    for rc in RC_FILES:
+        rc = Path(rc)
+        try:
+            content = rc.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            content = ""
+
+        if 'export PATH="$HOME/.local/bin:$PATH"' not in content: 
+            content += BLOCK
+        rc.write_text(content, encoding="utf-8")
+        print(f"  - {txt} was added to {rc.name}")
+    return True
 
 
 def install_scripts():
     print(f"Start installation:")
     print(f"  - operating system: {SYSTEM}")
-    print(f"  - environment: {ENV_DIR}")
+    print(f"  - environment: {ENV_DIR}\n")
     # force create env: czy istnieje czy nie 
     if ENV_DIR.exists():
         shutil.rmtree(str(ENV_DIR))
@@ -140,7 +184,7 @@ def install_scripts():
                     prompt='acc',
                     upgrade_deps=True,
                     ).create(str(ENV_DIR))
-    print("  - virtual env is created")
+    print("  - virtual env is created\n")
     if PYTHON.is_file():
         print(f"python interpreter: {PYTHON}")
     else:
@@ -162,9 +206,9 @@ def install_scripts():
 
     res = subprocess.run([str(ACCURACY), '-h'], capture_output=True, text=True) 
     if res.returncode == 0:
-        print(f"  - the {ACCURACY} was installed successfully")
+        print(f"\n  - the {ACCURACY} was installed successfully")
     else:
-        print(f"  - error - the {ACCURACY} was not installed")
+        print(f"\n  - error - the {ACCURACY} was not installed")
 
     res = subprocess.run([str(ACCURACYGUI), '-h'],
                          capture_output=True,
@@ -176,13 +220,19 @@ def install_scripts():
 
 
     # dodawanie plików uruchamianych z dowolnej lokalizacji
-    if SYSTEM == 'Windows':
+    if SYSTEM == 'win32':
         win_add_to_path()
     else:
         BIN_DIR.mkdir(parents=True, exist_ok=True)
+        cmd = (f"# {ROOT}/install.py - add to PATH:\n"
+               f"EXPORT PATH={BIN_DIR}:{PATH}")
     print("  - ustawione katalogi i PATH")
     create_wrapper_files()
     print(f"  - utworzone wrapery:\n{ACCURACY}\n{ACCURACYGUI}\n")
+
+    # add .local/bin to PATH
+    if SYSTEM != 'win32':
+        add_path_to_rcfiles()
 
 
 # --- funkcje deinstalatora
@@ -216,7 +266,7 @@ def schedule_self_delete(project_root: Path) -> None:
     """
     Ustawia usunięcie katalogu projektu PO zakończeniu bieżącego procesu.
     """
-    if SYSTEM == 'Windows':
+    if SYSTEM == 'win32':
         tmp = Path(tempfile.gettempdir()) / "acc_uninstall.cmd"
         # czeknij sekundę, usuń katalog, usuń siebie
         cmd = f"""@echo off
