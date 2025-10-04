@@ -1,3 +1,12 @@
+"""Installs or removes the accuracy and accuracy_gui scripts.
+1. The script called without arguments installs the scripts.
+2. The script called with argument:
+  - `-u` / `--uninstall` argument: it uninstalls the scripts 
+  - `-p` / `--purge` argument: it uninstalls the scripts and completely removes
+     the cloned repository
+"""
+
+
 import os
 import sys
 import venv
@@ -6,6 +15,7 @@ import subprocess
 import shutil
 import argparse
 import tempfile
+import textwrap
 
 from pathlib import Path
 
@@ -23,7 +33,7 @@ REQUIREMENTS = ROOT / 'requirements.txt'
 # TOML = ROOT / "pyproject.toml"
 ACCURACY = 'accuracy'
 ACCURACYGUI = 'accuracy_gui'
-PATH = os.getenv('PATH')
+PATH = os.getenv('PATH', '')
 
 if SYSTEM == 'win32':
     import winreg as wr
@@ -34,9 +44,10 @@ if SYSTEM == 'win32':
     # zmienna środowiskowa – będzie zapisana jako REG_EXPAND_SZ
     BIN_DIR_LITERAL = r"%USERPROFILE%\bin"
 
-    # realna ścieżka na dysku
+    # realna ścieżka do katalogu z plikami wrap 
     BIN_DIR = Path(os.environ["USERPROFILE"]) / "bin"
     BIN_DIR.mkdir(parents=True, exist_ok=True)
+    BLOCK = ''  # tylko dla zgodności argumentów dla windows
 
 else:
     PYTHON = 'bin/python'
@@ -76,19 +87,21 @@ if SYSTEM == "darwin":    # macOS (zsh)
 elif SYSTEM == "linux":   # Linux (bash)
     RC_FILES = [Path.home()/".profile", Path.home()/".bashrc"]
 
+else:
+    RC_FILES = []  # tylko dla zgodności argumentów dla windows
+
 
 
 # --- funkcje - parser agrumentów
 
 
 def get_args():
-    txt = """Installs or removes the accuracy and accuracy_gui scripts.
-    The script called without arguments installs the scripts, and when called
-    with the `-u` (`--uninstall`) or `-p` (`--purge`) argument, it uninstalls
-    the scripts and removes all their associated data.
-    """
-    parser = argparse.ArgumentParser(prog='Install / uninstall.',
-                                     description=txt)
+    parser = argparse.ArgumentParser(
+            prog='Install / uninstall.',
+            description=textwrap.dedent(__doc__).strip(),
+            formatter_class=argparse.RawDescriptionHelpFormatter
+            )
+
     
     parser.add_argument('-u', '--uninstall', action='store_true',
                         help=("Uninstall: Removes script wrappers/bin"
@@ -128,7 +141,7 @@ def win_add_to_path() -> bool:
         parts = [seg for seg in current.split(";") if seg]
 
         literal  = BIN_DIR_LITERAL      # np. "%USERPROFILE%\\bin"
-        expanded = str(BIN_DIR)    # np. "C:\\Users\\pk\\.local\\bin"
+        expanded = str(BIN_DIR)         # np. "C:\\Users\\pk\\bin"
 
         if literal in parts or expanded in parts:
             return False  # już jest w PATH
@@ -150,7 +163,7 @@ def create_wrapper_files():
 
 def add_path_to_rcfiles():
     """Dodaje wpis do plików rc (np. .bashrc). Wpis dodaje ścieżkę do katalogu
-    ~/.profile/bin do PATH.
+    ~/.local/bin do PATH.
     """
     txt = r".local/bin"
     if txt in PATH:
@@ -224,11 +237,10 @@ def install_scripts():
         win_add_to_path()
     else:
         BIN_DIR.mkdir(parents=True, exist_ok=True)
-        cmd = (f"# {ROOT}/install.py - add to PATH:\n"
-               f"EXPORT PATH={BIN_DIR}:{PATH}")
+
     print("  - ustawione katalogi i PATH")
     create_wrapper_files()
-    print(f"  - utworzone wrapery:\n{ACCURACY}\n{ACCURACYGUI}\n")
+    print(f"  - utworzone wrapery:\n\t... {WRAP_CLI}\n\t... {WRAP_GUI}\n")
 
     # add .local/bin to PATH
     if SYSTEM != 'win32':
@@ -263,34 +275,35 @@ def uninstall_scripts():
             print(f"  - warn: cannot remove {ROOT / folder}: {e}")
 
 
-def schedule_self_delete(project_root: Path) -> None:
-    """
-    Ustawia usunięcie katalogu projektu PO zakończeniu bieżącego procesu.
-    """
-    if SYSTEM == 'win32':
-        tmp = Path(tempfile.gettempdir()) / "acc_uninstall.cmd"
-        # czeknij sekundę, usuń katalog, usuń siebie
-        cmd = f"""@echo off
-        timeout /T 1 /NOBREAK >nul
-        rmdir /S /Q "{project_root}"
-        del "%~f0"
-        """
-        tmp.write_text(cmd, encoding="utf-8")
-        subprocess.Popen([str(tmp)])
+# --- funkcje purge
+def run_purge() -> None:
+    """Copy acc/acc/src/purge.py to temp and run it detached:
+        <root> <ppid> <bin_dir>."""
+    src = ROOT / "acc" / "src" / "purge.py"     # ścieżka w repo
+    dst = Path(tempfile.gettempdir()) / "acc_purge.py"
+    shutil.copy2(src, dst)
+
+    ppid = os.getppid()
+    cmd = [sys.executable, str(dst),
+           "--root", str(ROOT),
+           "--ppid", str(ppid),
+           "--bin_dir", str(BIN_DIR),
+           "--block", BLOCK,
+           "--rc_files", ";".join(map(str, RC_FILES)),
+           ]
+
+    if SYSTEM == "win32":
+        DETACHED = 0x00000008 | 0x00000200  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+        subprocess.Popen(cmd, creationflags=DETACHED, close_fds=True, cwd=tempfile.gettempdir())
     else:
-        tmp = Path(tempfile.gettempdir()) / "acc_uninstall.sh"
-        script = f"""#!/usr/bin/env sh
-        ( sleep 1; rm -rf "{project_root}" ) &
-        """
-        tmp.write_text(script, encoding="utf-8")
-        tmp.chmod(0o755)
-        subprocess.Popen(["sh", str(tmp)])
+        subprocess.Popen(
+            cmd,
+            start_new_session=True,
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            close_fds=True,
+            cwd=tempfile.gettempdir(),
+        )
 
-
-def purge_repo():
-    uninstall_scripts()
-    schedule_self_delete(ROOT)
-    print("Repository removal scheduled.")
 
 
 # --- main()
@@ -298,7 +311,8 @@ def purge_repo():
 
 def main(args):
     if args.purge:
-        purge_repo()
+        # uruchom purge.py w tmp dir
+        run_purge()
     elif args.uninstall:
         uninstall_scripts()
     else:
