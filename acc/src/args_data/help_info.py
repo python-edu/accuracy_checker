@@ -128,7 +128,7 @@ These metrics can be conventionally divided into `simple` metrics \
    - FM (Fowlkes–Mallows index):
      -- fm = [(TP/(TP+FP))*(TP/(TP+FN))]^0.5 = (PPV * TPR)^0.5
 
-   - BM (informedness or Fowlkes–Mallows index):
+   - BM (Bookmaker informedness):
      -- bm = TPR + TNR - 1
 
    - MK (markedness (MK) or deltaP):
@@ -329,6 +329,7 @@ def mk_equations(txt: list[str]) -> list[str]:
             line = line.replace('--', '')
             line = line.strip()
             line = '\n' + f"$$\n{line}\n$$"
+            line = line.replace(r'^0.5', r'^{0.5}')
         res.append(line)
     return res
 

@@ -429,7 +429,7 @@ class AccIndex:
       4. FM (Fowlkes–Mallows index):
                 fm = [(TP/(TP+FP))*(TP/(TP+FN))]^0.5 = (PPV * TPR)^0.5
 
-      5. BM (informedness or Fowlkes–Mallows index):
+      5. BM (Bookmaker informedness):
                 bm = TPR + TNR - 1
 
       6. MK (markedness (MK) or deltaP):
@@ -604,7 +604,7 @@ class AccIndex:
         return (self.ppv * self.tpr) ** 0.5
 
     def _x2_bm(self):
-        """informedness or Fowlkes–Mallows index (BM)
+        """Bookmaker informedness (BM)
         bm = TPR + TNR - 1
         """
         return self.tpr + self.tnr - 1

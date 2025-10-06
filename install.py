@@ -34,6 +34,7 @@ REQUIREMENTS = ROOT / 'requirements.txt'
 ACCURACY = 'accuracy'
 ACCURACYGUI = 'accuracy_gui'
 PATH = os.getenv('PATH', '')
+LOG_DIR = (ROOT / 'logs').resolve()
 
 if SYSTEM == 'win32':
     import winreg as wr
@@ -72,13 +73,29 @@ ACCURACYGUI = (ENV_DIR / ACCURACYGUI).resolve()
 if SYSTEM == 'win32':
     WRAP_CLI = BIN_DIR / 'accuracy.cmd'
     WRAP_GUI = BIN_DIR / 'accuracy_gui.cmd'
-    SH_CLI = f'@echo off\r\n"{ACCURACY}" %*\r\n'
-    SH_GUI = f'@echo off\r\n"{ACCURACYGUI}" %*\r\n'
+    SH_CLI = (
+            '@echo off\r\n'
+            f'set "ACCURACY_LOG_DIR={LOG_DIR}"\r\n'
+            f'"{ACCURACY}" %*\r\n'
+            )
+    SH_GUI = (
+            '@echo off\r\n'
+            f'set "ACCURACY_LOG_DIR={LOG_DIR}"\r\n'
+            f'"{ACCURACYGUI}" %*\r\n'
+            )
 else:
     WRAP_CLI = BIN_DIR / 'accuracy'
     WRAP_GUI = BIN_DIR / 'accuracy_gui'
-    SH_CLI = f'#!/usr/bin/env sh\nexec "{ACCURACY}" "$@"\n'
-    SH_GUI = f'#!/usr/bin/env sh\nexec "{ACCURACYGUI}" "$@"\n'
+    SH_CLI = (
+            '#!/usr/bin/env sh\n'
+            f'export ACCURACY_LOG_DIR="{LOG_DIR}"\n'
+            f'exec "{ACCURACY}" "$@"\n'
+            )
+    SH_GUI = (
+            '#!/usr/bin/env sh\n'
+            f'export ACCURACY_LOG_DIR="{LOG_DIR}"\n'
+            f'exec "{ACCURACYGUI}" "$@"\n'
+            )
 
 # Wybór plików `rc` użytkownika
 if SYSTEM == "darwin":    # macOS (zsh)
@@ -185,7 +202,7 @@ def add_path_to_rcfiles():
 
 
 def install_scripts():
-    print(f"Start installation:")
+    print(f"\n>>> Start installation:")
     print(f"  - operating system: {SYSTEM}")
     print(f"  - environment: {ENV_DIR}\n")
     # force create env: czy istnieje czy nie 
@@ -234,7 +251,10 @@ def install_scripts():
 
     # dodawanie plików uruchamianych z dowolnej lokalizacji
     if SYSTEM == 'win32':
-        win_add_to_path()
+        if win_add_to_path():
+            print("  - added %USERPROFILE%\\bin to user PATH")
+        else:
+            print("  - %USERPROFILE%\\bin already in user PATH")
     else:
         BIN_DIR.mkdir(parents=True, exist_ok=True)
 

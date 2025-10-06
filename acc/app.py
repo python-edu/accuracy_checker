@@ -23,7 +23,7 @@ page = st_navbar(["Calculations", "Usage", "About data", "About metrics",
 
 
 # setup for global variables
-st.session_state.setdefault("DATA_ROOT", )
+st.session_state.setdefault("DATA_ROOT", None)
 
 
 
