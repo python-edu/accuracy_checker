@@ -13,7 +13,9 @@ you can use this tool to compute a range of accuracy metrics.
 
 # Usage
 
-After installation, run the script from any terminal by typing the command and providing the required positional arguments. In the examples below, the argument is the name of a `csv` file with classification results (see **Data Help**).
+After installation, run the script from any terminal by typing the command and providing the required positional
+arguments. In the examples below, the argument is the name of a `csv` file with classification results
+(see **Data Help**).
 
 1. ```bash
      @: accuracy raw_classification.csv
@@ -380,7 +382,7 @@ and complex metrics (calculated using simple metrics).
  - BM (Bookmaker informedness):
    $$bm = TPR + TNR - 1$$
 
- - MK (markedness (MK) or deltaP):
+ - MK (markedness or deltaP):
    $$mk = PPV + NPV - 1$$
 
 

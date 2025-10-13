@@ -10,7 +10,8 @@ The program is started from the command line. It can be run in two ways:
 
 2. GUI
 Type in the terminal:
-  - `streamlit run app.py`
+  - `accuracy_gui` - if installed via the installer, you can run it from
+     anywhere without manually activating the virtual environment
 
 3. CLI
 3.1. The input is a single '*.csv' file:
@@ -21,7 +22,6 @@ Type in the terminal:
   Examples of running a script:
     - `accuracy file.csv`
     - `accuracy file.csv class_map.json`
-
 
 3.2. Input data:
     - an image, after classification - usually of type '*.tif'
