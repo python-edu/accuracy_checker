@@ -27,15 +27,8 @@ def get_args():
 
 
 def main(args):
-    # parser = parsuj_argumenty()
-
-    # # 1. Obsługa argumentów linii poleceń
-    # # =====================================================================
-    # args = parser.parse_args()
-    # args = afn.args_validation(args, **{"script_name": __file__})
-
-    # 1a. It will display additional help and terminate the script
-    # afn.display_additional_help(args)
+    # 1. Obsługa argumentów linii poleceń
+    #   - fragment przeniesiony do funkcji `cli()`
 
     # --- scans data and checks data type ---
     args = data_recognition.recognize_data_type(args)
