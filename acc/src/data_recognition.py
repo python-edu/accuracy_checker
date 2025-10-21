@@ -130,7 +130,7 @@ def is_binary_matrix(df: pd.DataFrame) -> Tuple[bool, dict]:
 
 def is_imgs(args):
     """Są 2 przypadki:
-    1. args.path to jedna ścieżka do obrazu ('tif', 'tiff', ...) oznacza, żę
+    1. args.path to jedna ścieżka do obrazu ('tif', 'tiff', ...) oznacza, że
        wskazuje na wynik klasyfikacji. Wtedy w tym samym katalogu musi
        znajdować się plik z referencją, o takiej samej nazwie tylko z
        końcówką `ref` np.:
