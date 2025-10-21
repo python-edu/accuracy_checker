@@ -29,10 +29,6 @@ def parsuj_argumenty():
         fromfile_prefix_chars="@",
     )
     # --- argumenty głównego parsera ------------------------------------------
-    txt = FH("""Path to data file: '*.csv' or images. If images then:
-             - the first one is the reference (true values)
-             - the second one is the classification result
-             (predicted values).""").txt
     txt = FH("""Paths to data files. You can specify from one to 3 paths
     separated by a space, according to the scheme:
     - path.csv: one path - data saved in the '*.csv' file

@@ -3,6 +3,7 @@ import pandas as pd
 from tabulate import tabulate
 import argparse
 from typing import Any, Optional
+from types import SimpleNamespace
 
 
 class Verbose:
@@ -217,7 +218,8 @@ class Verbose:
 
     def _is_args_data(self, data: Any) -> bool:
         """
-        Checks if the data is an instance of argparse.Namespace.
+        Checks if the data is an instance of argparse.Namespace or
+        types.SimpleNamespace
 
         Args:
             data (Any): The data to check.
@@ -226,4 +228,5 @@ class Verbose:
             bool: True if the data is an argparse.Namespace instance,
                   else False.
         """
-        return isinstance(data, argparse.Namespace)
+        # return isinstance(data, argparse.Namespace)
+        return isinstance(data, (argparse.Namespace, SimpleNamespace))
