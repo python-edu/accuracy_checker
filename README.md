@@ -149,6 +149,12 @@ The input is a single `*.csv` file:
 ### Cross marix:
 ![cross1](./docs/cross_run1.png)
 
+### Cross marix with class_map:
+![cross2](./docs/cross_run2.png)
+
+### Other cross matrix cases:
+- using data in the form of `full cross matrix` and `binary cross matrix` is analogous to the cases shown above.
+
 
 ## Using *raster / vector*
 The input is a raster or / and vector:
@@ -163,6 +169,9 @@ The input is a raster or / and vector:
 
 ### Input raster with raster reference `_ref` + `*.json`
  ![raster3](./docs/raster_run3.png)
+
+### Input raster with raster vector data reference
+ ![raster4](./docs/raster_run4.png)
 
 
 ## Using *custom formula*

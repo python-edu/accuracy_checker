@@ -20,12 +20,7 @@ class StreamlitFileBrowser:
 
     def __call__(self, dir_path: str | Path = None):
         dir_path = Path(dir_path) if dir_path is not None else self.root
-        list_dirs = self._directory_list(dir_path)
-        # col1, col2 = st.columns([1, 2])
-        # with col1:
-        #     selected_dir = st.selectbox('Select directory:',
-        #                                 options=list_dirs)
-        # st.write(selected_dir)
+        # list_dirs = self._directory_list(dir_path)
 
 
 class ListDirectories:

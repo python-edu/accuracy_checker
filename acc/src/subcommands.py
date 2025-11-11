@@ -50,7 +50,6 @@ def from_raw(args):
     if args.map_labels is None:
         cm_obj.map_labels = None
     valid_cm = crm.CrossMatrixValidator(cm_obj.cross_full, cm_obj.map_labels)
-    # binary_cross, binary_cross_rep = create_binary_matrix(valid_cm.cross)
     binary_obj = create_binary_matrix(valid_cm.cross)
     return valid_cm, binary_obj
 # ---
@@ -61,14 +60,10 @@ def from_cross_full(args):
     with row and column descriptions and with row and column sums."""
     kwargs = {'header': 0, 'index_col': 0}
     cross_full = pd.read_csv(args.path1, sep=args.sep, **kwargs)
-    # cross = cross_full.iloc[:-1, :-1]
-    # binary_cross, binary_cross_rep = create_binary_matrix(cross)
 
     valid_cm = crm.CrossMatrixValidator(cross_full, args.map_labels)
     binary_obj = create_binary_matrix(valid_cm.cross)
     return valid_cm, binary_obj
-# binary_cross, binary_cross_rep = create_binary_matrix(valid_cm.cross)
-#    return valid_cm, binary_cross, binary_cross_rep
 # ---
 
 
@@ -106,7 +101,6 @@ def from_binary(args):
      - binary_cross_rep: in vertical format, for reporting purposes!!
     """
     kwargs = {'header': 0, 'index_col': 0}
-    binary_obj = BinaryMatrix()
     valid_cm = BinaryMatrix()
 
     if hasattr(args, 'reversed') and args.reversed:
@@ -114,10 +108,8 @@ def from_binary(args):
         binary_cross = binary_cross_rep.T
     else:
         binary_cross = pd.read_csv(args.path1, sep=args.sep, **kwargs)
-        binary_cross_rep = binary_cross.T
 
-    binary_obj.binary_cross = binary_cross
-    binary_obj.binary_cross_rep = binary_cross_rep
+    binary_obj = crm.BinaryCrossMatrixValidator(binary_cross, args.map_labels)
 
     for attr in ['cross_raw', 'cross', 'cross_sq', 'cross_full']:
         setattr(valid_cm, attr, None)

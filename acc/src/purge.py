@@ -10,7 +10,6 @@ that it can delete itself.
 import os
 import sys
 import argparse
-import tempfile
 import signal
 import shutil
 import textwrap
