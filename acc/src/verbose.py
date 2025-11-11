@@ -170,7 +170,7 @@ class Verbose:
 
         # Define the correct order for keys
         keys_order = [
-            "ROOT", "path", "data_type", "func", "path2", "path3",
+            "ROOT", "path", "data_type", "func", "path1", "path2", "path3",
             "save", "out_dir", "out_files", "report", "verbose", "precision",
             "sep", "script_name", "map_labels"
         ]

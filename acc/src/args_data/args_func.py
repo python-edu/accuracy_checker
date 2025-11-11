@@ -41,7 +41,93 @@ class FormatHelp:
     def __repr__(self):
         return self.txt
 
-    def _split(self, lines: list) -> dict:
+    def _split(self, lines: list[str]) -> list[dict]:
+        """Dzieli teks na różne grupy np listy, podlisty, json itp. Każda grupa
+        jest potem formatowana na własny sposób.
+        """
+        result = []
+        current_group = None
+        # służy do wykrywania końca bloku json:
+        # jeśli 0 - nie json, jeśli >0 to json
+        json_depth = 0
+    
+        for line in lines:
+            # Jeśli jesteśmy w bloku JSON — doklejaj linie aż do zbilansowania '}'
+            if json_depth > 0:
+                # dopisz linię do ostatniej grupy 'json'
+                current_group["json"] += "\n" + line
+                # aktualizuj głębokość (prosty licznik klamerek)
+                json_depth += line.count("{") - line.count("}")
+                if json_depth <= 0:
+                    # zamknęliśmy blok JSON
+                    current_group = None
+                    json_depth = 0
+                continue
+    
+            # pusty wiersz
+            if line == "":
+                result.append({"pusta": ""})
+                current_group = None
+                continue
+    
+            # podlista: '-- ...'
+            if line.startswith("--"):
+                if current_group is None or "podlista" not in current_group:
+                    current_group = {"podlista": line}
+                    result.append(current_group)
+                else:
+                    current_group["podlista"] += "\n" + line
+                continue
+    
+            # lista: '- ...'
+            if line.startswith("-"):
+                if current_group is None or "lista" not in current_group:
+                    current_group = {"lista": line}
+                    result.append(current_group)
+                else:
+                    current_group["lista"] += "\n" + line
+                continue
+    
+            # tabela: '+' lub '|'
+            if line.startswith("+") or line.startswith("|"):
+                if current_group is None or "table" not in current_group:
+                    current_group = {"table": line}
+                    result.append(current_group)
+                else:
+                    current_group["table"] += "\n" + line
+                continue
+    
+            # numerowany punkt: '1.' lub '1)'
+            if re.match(r"^\d+[\.\)]", line):
+                if current_group is None or "numerowany" not in current_group:
+                    current_group = {"numerowany": line}
+                    result.append(current_group)
+                else:
+                    current_group["numerowany"] += "\n" + line
+                continue
+    
+            # JSON: linia zaczyna się (po whitespacach) od '{'
+            if re.match(r"^\s*{", line):
+                current_group = {"json": line.strip()}
+                result.append(current_group)
+                # ustaw głębokość po pierwszej linii
+                json_depth = line.count("{") - line.count("}")
+                if json_depth <= 0:
+                    # jednowierszowy JSON '{}' – od razu zamknij
+                    current_group = None
+                    json_depth = 0
+                continue
+    
+            # opis (domyślne)
+            if current_group is None or "opis" not in current_group:
+                current_group = {"opis": line}
+                result.append(current_group)
+            else:
+                current_group["opis"] += " " + line
+    
+        return result
+
+    def _split_old(self, lines: list) -> dict:
         result = []
         current_group = None
 
@@ -79,6 +165,14 @@ class FormatHelp:
                     result.append(current_group)
                 else:
                     current_group["numerowany"] += "\n" + line
+
+            # Jeśli wiersz zaczyna się od znaku `{` to rozpoczyna blok json
+            elif re.match(r"^[{]", line):
+                if current_group is None or "json" not in current_group:
+                    current_group = {"json": line}
+                    result.append(current_group)
+                else:
+                    current_group["json"] += "\n" + line
             # Jeśli to jakikolwiek inny wiersz, traktuj go jako opis
             else:
                 if current_group is None or "opis" not in current_group:
@@ -104,6 +198,8 @@ class FormatHelp:
                 txt = self._format_opis(gr["opis"], width)
             elif "table" in gr:
                 txt = self._format_table(gr["table"], n)
+            elif "json" in gr:
+                txt = self._format_json(gr["json"])
 
             res.append(txt)
         return res
@@ -195,6 +291,12 @@ class FormatHelp:
         table = "\n".join(table)
         # table = textwrap.fill(table, width=width)
         return table
+
+    def _format_json(self, txt):
+        txt = json.loads(txt)
+        txt = json.dumps(txt, ensure_ascii=False, indent=2)
+        txt = textwrap.indent(txt, 4*' ')
+        return txt
 
 
 def check_file_path(path: str) -> str:
@@ -340,8 +442,40 @@ def search_reference_file(path: str) -> str | bool:
     return False
 
 
+def load_json_file(path: str) -> dict | None:
+    """
+    Args:
+        path (str): Path to the JSON file.
+
+    Returns:
+        dict: The class map loaded from the JSON file.
+        None: If no valid JSON file is found or parsing fails.
+
+    Raises:
+        OSError: If there are issues reading the JSON file.
+    """
+    path = Path(path).resolve()
+
+    if path.is_file():
+        try:
+            with open(path, "r") as file:
+                data = json.load(file)
+                # Attempt to convert keys to integers
+                try:
+                    return {int(key): value for key, value in data.items()}
+                except (ValueError, TypeError):
+                    return data
+        except (json.JSONDecodeError, OSError):
+            return None
+
+    return None
+
+
 def search_json_file(path: str) -> dict | None:
     """
+    Być może funkcja zostanie usunięta - zastąpiona normalnym ładowaniem json!!!
+
+
     Searches for a JSON file in the given directory.
 
     The JSON file is expected to contain a class map. If found, the first
@@ -382,18 +516,19 @@ def paths_decoder(args):
     """
     Decodes and validates paths provided as arguments.
 
-    The function supports 1 to 3 paths, handling various configurations:
+    The function supports 1 to 3 paths (path, path2, path3), handling various
+    configurations:
     - Single path:
-        - '*.csv' file sets `args.path`.
-        - '*.tif' image sets `args.path` and searches for reference data.
+        - '*.csv' file sets `args.path1`.
+        - '*.tif' image sets `args.path1` and searches for reference data.
     - Two paths:
-        - '*.tif' and '*.json': sets `args.path` and `args.path3`, searches
+        - '*.tif' and '*.json': sets `args.path1` and `args.path3`, searches
           for reference.
-        - '*.tif' and vector file ('*.shp', '*.gpkg'): sets `args.path` and
+        - '*.tif' and vector file ('*.shp', '*.gpkg'): sets `args.path1` and
           `args.path2`.
-        - '*.csv' and '*.json': sets `args.path` and `args.path2`.
+        - '*.csv' and '*.json': sets `args.path` and `args.path2` - zmieniłem na `args.path3` .
     - Three paths:
-        - Image, vector, and JSON file are expected. Sets `args.path`,
+        - Image, vector, and JSON file are expected. Sets `args.path1`,
           `args.path2`, `args.path3`.
 
     Additional options:
@@ -431,16 +566,17 @@ def paths_decoder(args):
         setattr(args, "help_formula", True)
         return args
 
-    # Handle three paths
+    # Handle three paths: '.tif', '.tif/.shp/.gpkg', '.json'
     if len(paths) == 3:
         if Path(paths[-1]).suffix != ".json":
             sys.exit("\n\tThe last path should point to a `.json` file: "
                      f"{paths[-1]}")
-        if Path(paths[1]).suffix not in vector_suffixes:
-            sys.exit("\n\tThe second path should point to a vector file: "
-                     f"{paths[1]}")
+        # if Path(paths[1]).suffix not in vector_suffixes:
+        if Path(paths[1]).suffix not in all_suffixes:
+            sys.exit("\n\tThe second path should point to the reference data "
+                     f"(image or vector data) not to '{paths[1]}'.\n")
 
-        setattr(args, "path", check_file_path(paths[0]))
+        setattr(args, "path1", check_file_path(paths[0]))
         setattr(args, "path2", check_file_path(paths[1]))
         setattr(args, "path3", check_file_path(paths[2]))
 
@@ -448,26 +584,32 @@ def paths_decoder(args):
     elif len(paths) == 2:
         if (Path(paths[0]).suffix in imgs_suffixes and
                 Path(paths[-1]).suffix == ".json"):
-            args.path = check_file_path(paths[0])
+            args.path1 = check_file_path(paths[0])
             args.path2 = None
             args.path3 = check_file_path(paths[-1])
         elif (
             Path(paths[0]).suffix in imgs_suffixes
-            and Path(paths[-1]).suffix in vector_suffixes
+            # and Path(paths[-1]).suffix in vector_suffixes
+            # vector + image - also image_ref
+            and Path(paths[-1]).suffix in all_suffixes 
         ):
-            args.path = check_file_path(paths[0])
+            args.path1 = check_file_path(paths[0])
             args.path2 = check_file_path(paths[-1])
             args.path3 = None
-        elif (
-            Path(paths[0]).suffix in imgs_suffixes
-            and Path(paths[-1]).suffix in imgs_suffixes
-        ):
-            args.path = check_file_path(paths[0])
-            args.path2 = check_file_path(paths[-1])
+        # teraz zawarte jest w poprzednim - chyba?? 
+        # elif (
+        #     Path(paths[0]).suffix in imgs_suffixes
+        #     and Path(paths[-1]).suffix in imgs_suffixes
+        # ):
+        #     args.path = check_file_path(paths[0])
+        #     args.path2 = check_file_path(paths[-1])
+
         elif (Path(paths[0]).suffix == ".csv" and
                 Path(paths[-1]).suffix == ".json"):
-            args.path = check_file_path(paths[0])
-            args.path2 = check_file_path(paths[-1])
+            args.path1 = check_file_path(paths[0])
+            # args.path2 = check_file_path(paths[-1])
+            args.path2 = None
+            args.path3 = check_file_path(paths[-1])
         else:
             sys.exit("\n\tInvalid input file paths! See help.\n")
 
@@ -475,11 +617,13 @@ def paths_decoder(args):
     elif len(paths) == 1:
         suffix = Path(paths[0]).suffix
         # breakpoint()
-        if suffix == ".csv":
-            args.path = check_file_path(paths[0])
-        elif suffix in imgs_suffixes:
-            args.path = check_file_path(paths[0])
+        if suffix == ".csv" or suffix in imgs_suffixes:
+            args.path1 = check_file_path(paths[0])
             args.path2 = None
+            args.path3 = None
+        # elif suffix in imgs_suffixes:
+        #     args.path = check_file_path(paths[0])
+        #     args.path2 = None
         elif suffix in vector_suffixes:
             msg = (
                 f"\n\tOnly one path is entered: {paths[0]}.\n"
@@ -504,7 +648,7 @@ def set_root() -> Path:
     # Pobierz absolutną ścieżkę do bieżącego pliku
     current_file = Path(__file__).resolve()
     # Przejdź dwa poziomy wyżej:
-    # args_func.py -> args_data -> src -> acc (główna ścieżka)
+    # args_func.py in args_data -> src -> acc (główna ścieżka)
     root_dir = current_file.parents[2]
     return root_dir
 
@@ -537,6 +681,7 @@ def args_validation(args, **kwargs):
     """
     ROOT = set_root()
     args.ROOT = ROOT
+    args.README = str(Path(args.ROOT.parent) / "README.md")
 
     if args.save and args.zip:
         msg = """You can choose whether to save '*.csv' files or '*.zip'
@@ -554,12 +699,16 @@ def args_validation(args, **kwargs):
         return args
 
     # Handle single `.tif` files by searching for reference files
-    if Path(args.path).suffix in imgs_suffixes and args.path2 is None:
-        reference_path = search_reference_file(args.path)
+    if Path(args.path1).suffix in imgs_suffixes and args.path2 is None:
+        reference_path = search_reference_file(args.path1)
         if not reference_path:
+            tmp = Path(args.path1)
+            ref_file = f"{tmp.stem}_ref."  # {tmp.suffix}"
             msg = f"\n\tFor file:\n\t  {args.path}\n"
-            msg += "\t  no file with reference values found (*.shp, *.gpkg).\n"
-            sys.exit(msg)
+            msg += f"\t  no file `{ref_file}` with reference values found "
+            msg += "(*.shp, *.gpkg, *.tif).\n"
+            print(msg, file=sys.stdout, flush=True)
+            sys.exit(1)
         args.path2 = reference_path
 
     # Set output directory for saving results
@@ -608,12 +757,16 @@ def args_validation(args, **kwargs):
         )
 
     # Detect column separator for `.csv` files
-    if args.sep is None and Path(args.path).suffix == ".csv":
-        args.sep = detects_separator(args.path)
+    if args.sep is None and Path(args.path1).suffix == ".csv":
+        args.sep = detects_separator(args.path1)
 
     # Search for JSON class map file
-    root_dir = Path(args.path).parent
-    args.map_labels = search_json_file(root_dir)
+    # root_dir = Path(args.path).parent
+    # args.map_labels = search_json_file(root_dir)
+    if args.path3 is not None:
+        args.map_labels = load_json_file(args.path3)
+    else:
+        args.map_labels = None
 
     return args
 
@@ -660,18 +813,28 @@ def display_additional_help(args):
     Returns:
         None: Exits the script after displaying help information.
     """
+    with open(args.README) as f:
+        readme_txt = f.read()
+
+    help_txt = info.Readme2HelpCli(readme_txt)
+
     if (hasattr(args, "help_usage")
             or hasattr(args, "help_data")
             or hasattr(args, "help_metrics")
             or hasattr(args, "help_formula")):
         if hasattr(args, "help_data"):
-            txt = FormatHelp(info.info_data).txt
+            # txt = FormatHelp(info.info_data).txt
+            txt = help_txt.data_help
         elif hasattr(args, "help_metrics"):
-            txt = FormatHelp(info.info_metrics).txt
+            # txt = FormatHelp(info.info_metrics).txt
+            txt = help_txt.metrics_help
         elif hasattr(args, "help_usage"):
-            txt = FormatHelp(info.info_usage).txt
+            # txt = FormatHelp(info.info_usage).txt
+            txt = help_txt.usage_help
         elif hasattr(args, "help_formula"):
-            txt = FormatHelp(info.info_formula).txt
+            # txt = FormatHelp(info.info_formula).txt
+            txt = help_txt.formula_help
+            
 
         print(txt)
         sys.exit()

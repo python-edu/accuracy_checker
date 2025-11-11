@@ -39,12 +39,13 @@ def from_raw(args):
     """Performs calculations on data that is read from a file containing
     2 or 3 columns (raw data)."""
     kwargs = {'header': 0, 'index_col': None}
-    data = pd.read_csv(args.path, sep=args.sep, **kwargs)
+    data = pd.read_csv(args.path1, sep=args.sep, **kwargs)
     raw_obj = crm.RawData(data, map_labels=args.map_labels)
     cm_obj = crm.CrossMatrix(raw_obj.true_values,
                              raw_obj.predicted,
                              raw_obj.map_labels,
                              )
+
     # if there is no json file with map_labels - we set map_labels to None
     if args.map_labels is None:
         cm_obj.map_labels = None
@@ -59,7 +60,7 @@ def from_cross_full(args):
     """Performs calculations on data of type `cross_full` - cross matrix
     with row and column descriptions and with row and column sums."""
     kwargs = {'header': 0, 'index_col': 0}
-    cross_full = pd.read_csv(args.path, sep=args.sep, **kwargs)
+    cross_full = pd.read_csv(args.path1, sep=args.sep, **kwargs)
     # cross = cross_full.iloc[:-1, :-1]
     # binary_cross, binary_cross_rep = create_binary_matrix(cross)
 
@@ -75,7 +76,7 @@ def from_cross(args):
     """Performs calculations on `cross` data - cross matrix with row
     and column descriptions but without the sum of rows and columns."""
     kwargs = {'header': 0, 'index_col': 0}
-    cross = pd.read_csv(args.path, sep=args.sep, **kwargs)
+    cross = pd.read_csv(args.path1, sep=args.sep, **kwargs)
 
     valid_cm = crm.CrossMatrixValidator(cross, args.map_labels)
     binary_obj = create_binary_matrix(valid_cm.cross)
@@ -91,7 +92,7 @@ def from_cross_raw(args):
     (it is not known which is which)!!!
     """
     kwargs = {'header': None, 'index_col': None}
-    cross_raw = pd.read_csv(args.path, sep=args.sep, **kwargs)
+    cross_raw = pd.read_csv(args.path1, sep=args.sep, **kwargs)
     valid_cm = crm.CrossMatrixValidator(cross_raw, args.map_labels)
     binary_obj = create_binary_matrix(valid_cm.cross)
     return valid_cm, binary_obj
@@ -109,10 +110,10 @@ def from_binary(args):
     valid_cm = BinaryMatrix()
 
     if hasattr(args, 'reversed') and args.reversed:
-        binary_cross_rep = pd.read_csv(args.path, sep=args.sep, **kwargs)
+        binary_cross_rep = pd.read_csv(args.path1, sep=args.sep, **kwargs)
         binary_cross = binary_cross_rep.T
     else:
-        binary_cross = pd.read_csv(args.path, sep=args.sep, **kwargs)
+        binary_cross = pd.read_csv(args.path1, sep=args.sep, **kwargs)
         binary_cross_rep = binary_cross.T
 
     binary_obj.binary_cross = binary_cross
@@ -137,11 +138,11 @@ def from_imgs(args):
     # if reference is geopandas
     suffix = Path(args.path2).suffix
     if suffix in ('.shp', '.gpkg'):
-        clipped_image, clipped_meta = clp.clip_raster(args.path, ref_data)
+        clipped_image, clipped_meta = clp.clip_raster(args.path1, ref_data)
         shapes = clp.get_shapes(ref_data)
         ref_data = clp.rasterize_vector(shapes, clipped_meta)
 
-    img = clp.load_classification_data(args.path)
+    img = clp.load_classification_data(args.path1)
 
     # pd.df
     raw_data = create_raw_data(ref_data, img)
