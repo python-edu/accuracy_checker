@@ -22,10 +22,10 @@ from acc.main import main
 
 
 # setup for help
-help_map = {"Usage": "info_usage",
-            "About data": "info_data",
-            "About metrics": "info_metrics",
-            "Formula": "info_formula"}
+help_map = {"Usage": "usage_help",  # "info_usage",
+            "About data": "data_help",
+            "About metrics": "metrics_help",
+            "Formula": "formula_help"}
 
 st.markdown("""
 <style>
@@ -62,6 +62,13 @@ def setup_dirs():
     if "root" not in st.session_state:
         root = Path(__file__).parent.parent.resolve()
         st.session_state['root'] = root
+
+    if 'readme_path' not in st.session_state:
+        st.session_state['readme_path'] = st.session_state.root / 'README.md'
+
+    if 'docs_path' not in st.session_state:
+        st.session_state['docs_path'] = next(st.session_state.root.rglob('docs'))
+    
 
     cwd = (Path(st.session_state.root) / "example").resolve()
     # globalna - referencja
@@ -250,6 +257,7 @@ class _WriteToStreamlit(io.TextIOBase):
 
         self.bufor.append(msg)
         self.box.code("".join(self.bufor))
+        return len(msg)
 
 
 def del_path(file_key: str):
@@ -292,9 +300,13 @@ if page != "Calculations":
     # --- help section
     st.write(f"## {page}")
     text_name = help_map.get(page, 'no')
-    help_text = getattr(help_info, text_name, "No help")
-    help_text = help_info.parse_help_text(help_text)
-    st.markdown(help_text)
+    with open(st.session_state['readme_path']) as f:
+        readme_txt = f.read()
+    help_txt = help_info.Readme2Streamlit(readme_txt,
+                                          st.session_state.docs_path)
+    # help_text = getattr(help_info, text_name, "No help")
+    # help_text = help_info.parse_help_text(help_text)
+    st.markdown(getattr(help_txt, text_name), unsafe_allow_html=True)
 
 
 # to uruchamia obliczenia - skrypt `main.py`
@@ -321,8 +333,8 @@ if page == "Calculations":
             }
 
     file_pattern = {'File_1': ['*.csv', '*.tif', '*.tiff', '*.TIF', '*.TIFF'],
-                    'File_2': ['*.csv', '*.json'],
-                    'File_3': ['*.csv']
+                    'File_2': ['*.csv', '*.tif', '*.tiff', '*.TIF', '*.TIFF'],
+                    'File_3': ['*.json']
                     }
     file_name = {'File_1': 'pth1',
                  'File_2': 'pth2',
@@ -563,8 +575,22 @@ if page == "Calculations":
             args = SimpleNamespace(**st.session_state.args)
             args = afn.args_validation(args, **{"script_name": __file__})
             writer = _WriteToStreamlit(st.empty())
-            with contextlib.redirect_stdout(writer):
-                main(args)
+
+            # with contextlib.redirect_stdout(writer):
+            with (contextlib.redirect_stdout(writer),
+                  contextlib.redirect_stderr(writer)):
+                try:
+                    main(args)
+                except SystemExit as e:
+                    # jeśli w innym miejscu użyjesz sys.exit("komunikat"),
+                    # to trafi tu jako e.code (string). W Twojej obecnej ścieżce (exit(1))
+                    # ten blok po prostu łagodnie kończy przebieg.
+                    if isinstance(e.code, str) and e.code.strip():
+                        writer.write(e.code + "\n")
+                    st.stop() 
+
+            # with contextlib.redirect_stdout(writer):
+            #     main(args)
         else:
             st.info('Select arguments, please!')
 

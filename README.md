@@ -1,6 +1,8 @@
 # About the script
 
-This script computes popular **classification accuracy metrics**. It was written to facilitate the comparison of results across different scientific studies. Published raster-image classification results in the Earth sciences often come from diverse methodologies and tools, which makes direct comparison difficult.
+This script computes popular **classification accuracy metrics**. It was written to facilitate the comparison of results
+across different scientific studies. Published raster-image classification results in the Earth sciences often come from
+diverse methodologies and tools, which makes direct comparison difficult.
 
 If you have any of the following data types:
 - a post-classification image,
@@ -12,25 +14,26 @@ you can use this tool to compute a range of accuracy metrics.
 ---
 
 # Usage
+> **The `Usage help` section contains full help on how to use the script!**
 
 After installation, run the script from any terminal by typing the command and providing the required positional
 arguments. In the examples below, the argument is the name of a `csv` file with classification results
 (see **Data Help**).
 
-1. ```bash
-     @: accuracy raw_classification.csv
+1. If installed via the `installer`, you can run it from anywhere without manually activating the virtual environment.
+   ```bash
+    -:$ accuracy raw_classification.csv
    ```
-   *If installed via the installer, you can run it from anywhere without manually activating the virtual environment.*
 
-2. ```bash
-     (acc) @: accuracy raw_classification.csv
+2. If you installed `manually` into a virtual environment, activate the environment first, then run the command.
+   ```bash
+    (acc) -:$ accuracy raw_classification.csv
    ```
-   *If you installed manually into a virtual environment, activate the environment first, then run the command.*
 
-There is also a simple GUI based on **Streamlit** that opens in your web browser:
 
-3. ```bash
-     @: accuracy_gui
+3. There is also a simple GUI based on **Streamlit** that opens in your web browser.
+   ```bash
+    -:$ accuracy_gui
    ```
    **Note**:
     - *the GUI may not expose the full functionality of the CLI.*
@@ -43,12 +46,12 @@ You can install the script manually or use the installer.
 
 First, download or clone the repository to your local drive:
   ```bash
-    git clone https://github.com/python-edu/accuracy_checker.git
+    -:$ git clone https://github.com/python-edu/accuracy_checker.git
   ```
 
 Unpack the repository to your target location. Open a terminal and go to the root directory of the unpacked repo (acc):
   ```bash
-    cd acc/
+    -:$ cd acc/
   ```
 
 
@@ -56,7 +59,7 @@ Unpack the repository to your target location. Open a terminal and go to the roo
 
 Run the installer by entering the command:
 ```bash
-  python install.py
+  -:$ python install.py
 ```
 
 The installer will:
@@ -77,23 +80,23 @@ The installer will:
 ## Manual installation
 
    ```bash
-     # 1. Create a virtual environment, e.g.:
-     python -m venv env --prompt acc
+     -:$ # 1. Create a virtual environment, e.g.:
+     -:$ python -m venv env --prompt acc
      
-     # 2. Activate the virtual environment and install dependencies, e.g.:
-     env/Scripts/activate       # Windows System:
-     source env/bin/activate    # Linux (Debian):
-     python -m pip install -r requirements.txt
+     -:$ # 2. Activate the virtual environment and install dependencies, e.g.:
+     -:$ env/Scripts/activate       # Windows System:
+     -:$ source env/bin/activate    # Linux (Debian):
+     -:$ python -m pip install -r requirements.txt
      
-     # 3. Install the package in the environment:
-     python -m pip install -e .
+     -:$ # 3. Install the package in the environment:
+     -:$ python -m pip install -e .
    ```
 
 ## Uninstallation
 To completely uninstall the script, including removing the unpacked repository, run the installer with the purge
 option (`-p/--purge`):
   ```bash
-    python install.py -p
+    -:$ python install.py -p
   ```
 
 ---
@@ -102,54 +105,75 @@ option (`-p/--purge`):
 # Usage help
 You can display help by calling the script with the following options:
   ```bash 
-    accuracy -h/--help      # general help on how the script works
-    
-    accuracy usage help     # help about script usage
-
-    accuracy data help      # information about input data
-
-    accuracy metrics help   # information about accuracy metrics
-
-    accuracy formula help   # help for custom calculation formulas
+    -:$ accuracy -h/--help      # general help on how the script works
+    -:$ accuracy usage help     # help about script usage
+    -:$ accuracy data help      # information about input data
+    -:$ accuracy metrics help   # information about accuracy metrics
+    -:$ accuracy formula help   # help for custom calculation formulas
   ```
 
+## Input file schemes
+You can input one (1) to three (3) files into the script, using one of the following schemes:
+ - `scheme 1`: single **csv** file (see Using row data or Using cross matrices). In the GUI, this is option `File_1`.
+ - `scheme 2`: single image file after classification if `_ref` file exists (see Using raster / vector). In the GUI, this is option `File_1`.
+ - `Scheme 3`: two files, a **csv** file (`File_1` in the GUI) and a **json** file (`File_3` in the GUI).
+ - `scheme 4`: two files, the image after classification (`File_1` in the GUI) and the reference data (image or vector - `File_2` in the GUI).
+ - `scheme 5`: three files, the image after classification (`File_1` in the GUI), the reference data (`File_2` in the GUI), and the **json** file (class map, `File_3` in the GUI).
 
-## Single file
+## Using *raw data*
 The input is a single `*.csv` file:
- - raw data: `data2cols.csv` or `data3cols.csv`
+ - raw data: data2cols.csv or data3cols.csv
  - confusion matrix: cross_raw.csv, cross.csv or cross_full.csv
  - binary_cross.csv
 
-```bash
-  accuracy file.csv
-  accuracy file.csv class_map.json
-```
+### data2cols.csv
+![run1](./docs/data2col_run1.png)
+
+### data2cols.csv with class_map
+![run2](./docs/data2col_run2.png)
+
+### data3cols.csv
+![run3](./docs/data3col_run1.png)
+
+### data3cols.csv with class_map
+![run4](./docs/data3col_run2.png)
 
 
-## Raster / vector
+## Using *cross matrices*
+### Raw cross marix:
+![cross_raw1](./docs/cross_raw_run1.png)
+
+### Raw cross marix with class_map:
+![cross_raw2](./docs/cross_raw_run2.png)
+
+### Cross marix:
+![cross1](./docs/cross_run1.png)
+
+
+## Using *raster / vector*
 The input is a raster or / and vector:
  - an image, after classification - typically `*.tif`
  - reference data (reference raster mask): image/mask `*.tif` or vector data e.g. `*.shp`, `*.gpkg`
 
- ```bash
-   accuracy raster.tif
-   accuracy raster.tif class_map.json
-   accuracy raster.tif reference_raster.tif
-   accuracy raster.tif reference_raster.tif class_map.json
-   accuracy raster.tif reference_vector.shp
-   accuracy raster.tif reference_vector.shp class_map.json
- ```
+### Input raster without data references
+ ![raster1](./docs/raster_run1.png)
 
-## Custom formula
+### Input raster with raster reference `_ref`
+ ![raster2](./docs/raster_run2.png)
+
+### Input raster with raster reference `_ref` + `*.json`
+ ![raster3](./docs/raster_run3.png)
+
+
+## Using *custom formula*
 You can enter your own formula to estimate accuracy:
  ```bash
-   accuracy file.csv -f "ac = (TP * TN - FP * FN) / ((TP + FP) * (TP + FN))**0.5"
+    -:$ accuracy file.csv -f "ac = (TP * TN - FP * FN) / ((TP + FP) * (TP + FN))**0.5"
  ```
-
 ---
 
 
-# Data Help
+# Data help
 
 ## Raw data:
 Stores classification results in a `*.csv` table with 2 or 3 columns:
@@ -264,28 +288,43 @@ The input data can also be raster images and vector data:
  - two raster images: classification result and reference image (mask)
  - raster image and vector data
 
+### Raster images:
+  - should be in `*.tif` format, georeferenced
+  - different file extensions are accepted: `'*.tif', '*.tiff', '*.TIF', '*.TIFF'`
 
-1. Raster images:
-   - should be in `*.tif` format, georeferenced
-   - different file extensions are accepted: `'*.tif', '*.tiff', '*.TIF', '*.TIFF'`
-
-2. Vector data formats supported:
- - `*.shp` ESRI Shapefile spatial data format
- - `*.gpkg` the GeoPackage (GPKG)
+### Vector data formats supported:
+  - `*.shp` ESRI Shapefile spatial data format
+  - `*.gpkg` the GeoPackage (GPKG)
 
 > **Tip**:
 >
 > If the reference file shares the same name as the classification result raster with an `_ref` suffix, you can provide
-only the classification raster path and the script will find the reference automatically. For example, instead of:
+> only the classification raster path and the script will find the reference automatically. For example, instead of:
 > ```bash
->   accuracy my_classification.tif my_classification_ref.tif
->   accuracy my_classification.tif my_classification_ref.shp
+>   -:$ ccuracy my_classification.tif my_classification_ref.tif
+>   -:$ ccuracy my_classification.tif my_classification_ref.shp
 > ```
 > 
 > You can:
 > ```bash
->   accuracy my_classification.tif
+>   -:$ ccuracy my_classification.tif
 > ```
+
+
+## `*.json` file
+A JSON text file used to rename (relabel) classes. The file must map current class labels to new labels, for example:
+
+  ```bash
+    {
+      "cl_a": "grass",
+      "cl_b": "coniferous forest",
+      "cl_c": "roads"
+    }
+  ```
+
+If the input data do not include class names (for example, `cross_raw.csv`),
+the mapped names will be applied based on the row and column indices (integers)
+of the matrix.
 
 ---
 
@@ -310,7 +349,7 @@ Accuracy metrics classically used in remote sensing:
  - PA (producer_accuracy):
    $$PA = TP / (TP + FN)$$
 
- - UA (user_accuracy)
+ - UA (user_accuracy):
    $$UA = TP / (TP + FP)$$
 
  - OME (omission errors / errors_of_omission):
@@ -329,43 +368,43 @@ Accuracy metrics classically used in remote sensing:
 These metrics can be conventionally divided into simple metrics (calculated directly from the TP, TN, FP and FN values)
 and complex metrics (calculated using simple metrics).
 
-### 1. Simple metrics
+### Simple metrics
 
-  - ACC (accuracy):
-    $$ACC = (TP+TN) / (P+N) = (TP+TN) / (TP+TN+FP+FN)$$
- 
-  - PPV (precision or positive predictive value):
-    $$PPV = TP / (TP + FP)$$
- 
-  - TPR (sensitivity, recall, hit rate, or true positive rate):
-    $$TPR = TP / P = TP / (TP + FN) = 1 - FNR$$
- 
-  - TNR (specificity, selectivity or true negative rate):
-    $$TNR = TN / N = TN / (TN + FP) = 1 - FPR$$
- 
-  - NPV (negative predictive value):
-    $$NPV = TN / (TN + FN) = 1 - FOR$$
- 
-  - FNR (miss rate or false negative rate):
-    $$FNR = FN / P = FN / (FN + TP) = 1 - TPR$$
- 
-  - FPR (fall-out or false positive rate):
-    $$FPR = FP / N = FP / (FP + TN) = 1 - TNR$$
- 
-  - FDR (false discovery rate):
-    $$FDR = FP / (FP + TP) = 1 - PPV $$
- 
-  - FOR (false omission rate):
-    $$FOR = FN / (FN + TN) = 1 - NPV $$
- 
-  - TS / CSI (Threat score (TS) or critical success index (CSI)):
-    $$TS = TP / (TP + FN + FP) $$
- 
-  - MCC (Matthews correlation coefficient):
-    $$mcc = (TP \cdot TN - FP \cdot FN) / ((TP+FP) \cdot (TP+FN) \cdot (TN+FP) \cdot (TN+FN))^{0.5}$$
+ - ACC (accuracy):
+   $$ACC = (TP+TN) / (P+N) = (TP+TN) / (TP+TN+FP+FN)$$
+
+ - PPV (precision or positive predictive value):
+   $$PPV = TP / (TP + FP)$$
+
+ - TPR (sensitivity, recall, hit rate, or true positive rate):
+   $$TPR = TP / P = TP / (TP + FN) = 1 - FNR$$
+
+ - TNR (specificity, selectivity or true negative rate):
+   $$TNR = TN / N = TN / (TN + FP) = 1 - FPR$$
+
+ - NPV (negative predictive value):
+   $$NPV = TN / (TN + FN) = 1 - FOR$$
+
+ - FNR (miss rate or false negative rate):
+   $$FNR = FN / P = FN / (FN + TP) = 1 - TPR$$
+
+ - FPR (fall-out or false positive rate):
+   $$FPR = FP / N = FP / (FP + TN) = 1 - TNR$$
+
+ - FDR (false discovery rate):
+   $$FDR = FP / (FP + TP) = 1 - PPV $$
+
+ - FOR (false omission rate):
+   $$FOR = FN / (FN + TN) = 1 - NPV $$
+
+ - TS / CSI (Threat score (TS) or critical success index (CSI)):
+   $$TS = TP / (TP + FN + FP) $$
+
+ - MCC (Matthews correlation coefficient):
+   $$mcc = (TP \cdot TN - FP \cdot FN) / ((TP+FP) \cdot (TP+FN) \cdot (TN+FP) \cdot (TN+FN))^{0.5}$$
 
 
-### 2. Complex metrics
+### Complex metrics
 
  - PT (Prevalence Threshold):
    $$pt = ((TPR \cdot (1 - TNR))^{0.5} + TNR - 1) / (TPR + TNR - 1)$$
@@ -384,6 +423,28 @@ and complex metrics (calculated using simple metrics).
 
  - MK (markedness or deltaP):
    $$mk = PPV + NPV - 1$$
+
+
+# Formula help
+You can define your own calculation formula:
+ 
+  - The calculations use the binary_cross matrix table.
+  - The formula must follow Python's arithmetic syntax.
+  - Use the following labels: TP, TN, FP, and FN.
+  - The formula should consist of a left-hand side and a right-hand side: `metric = mathematical operations`. Example:
+    
+    $$mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5$$
+
+  - Do not use whitespace (e.g., spaces) in the formula or metric name.
+  - The metric name should be a short string, such as OA, f1, etc.
+  - The pattern entered into the script must be surrounded by quotation marks (single `'` or double `"`).
+ 
+**Example of script use:**
+
+  ```bash
+     -:$ accuracy input_path -f "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
+     -:$ accuracy input_path --formula "mcc=(TP*TN-FP*FN)/((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**0.5"
+  ```
 
 
 # Dependencies

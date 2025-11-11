@@ -1,6 +1,24 @@
 """
 The module contains functions that are designed to automatically recognize
-the type of data that was fed to the script:
+the type of data that was fed to the script. The functions in this module
+examine the contents of `args.path1, args.path2, args.path3`.
+There are cases of this paths:
+  I. Image input:
+    1. path1=file.tif, path2=file.tiff (shp, gpkg), path3=file.json
+              
+    2. path1=file.tif, path2=file.tiff (shp, gpkg), path3=None
+
+    3. path1=file.tif, path2=None, path3=None
+    
+
+  II. csv input - 
+    4. path1=file.csv, path2=file.csv, path3=file.json
+
+    5. path1=file.csv, path2=file.csv, path3=None
+
+    6. path1=file.csv, path2=None, path3=None
+
+
     - raw data: 2 or 3 columns
     - cross matrix: raw (just numbers), with row and column descriptions,
       full (descriptions + row and column summaries)
@@ -130,18 +148,18 @@ def is_binary_matrix(df: pd.DataFrame) -> Tuple[bool, dict]:
 
 def is_imgs(args):
     """Są 2 przypadki:
-    1. args.path to jedna ścieżka do obrazu ('tif', 'tiff', ...) oznacza, że
+    1. args.path1 to jedna ścieżka do obrazu ('tif', 'tiff', ...) oznacza, że
        wskazuje na wynik klasyfikacji. Wtedy w tym samym katalogu musi
        znajdować się plik z referencją, o takiej samej nazwie tylko z
        końcówką `ref` np.:
        - `cracow.tif` -> `cracow_ref.tif` lub `cracow_ref.shp` lub
          `cracow_ref.gpkg`
-    2. args.path to 2 ścieżki, wtedy pierwsza to referencja a druga to wynik
-    klasyfikacji.
+    2. args.path1 i args.path2 to 2 ścieżki, wtedy path2 to referencja a path1
+    to wynik klasyfikacji.
 
     """
     meta = {"func": from_imgs, "data_type": "imgs"}
-    suffix = Path(args.path).suffix[1:]
+    suffix = Path(args.path1).suffix[1:]
     if suffix in ["tif", "tiff", "TIF", "TIFF", "shp", "gpkg"]:
         return True, meta
     return False, None
@@ -177,6 +195,46 @@ def recognize_data_type(args):
     def update_args(meta):
         for key, val in meta.items():
             setattr(args, key, val)
+
+    # check if it is image()
+    check, meta = is_imgs(args)
+    if check:
+        # update_args(args, meta)
+        update_args(meta)
+        return args
+
+    is_functions = {
+        is_data_raw: {"header": 0, "index_col": None},
+        is_binary_matrix: {"header": 0, "index_col": 0},
+        is_cross_full: {"header": 0, "index_col": 0},
+        is_cross_matrix: {"header": 0, "index_col": 0},
+        is_cross_raw: {"header": None, "index_col": None},
+    }
+
+    for func, kwargs in is_functions.items():
+        df = pd.read_csv(args.path1, sep=args.sep, **kwargs)
+        check, meta = func(df)
+        # breakpoint()
+        if check:
+            # update_args(args, meta)
+            update_args(meta)
+            return args
+
+
+def recognize_data_type1(args):
+    """The function determines what type of data `args.path` points to. The
+    data are either 'csv' files or '*.tif' and '*.shp' (or '*.gpkg') files.
+    In the first step it checks if the data are images (image, vector).
+    """
+    # meta = {'func': None, 'data_type': None, 'layout': None}
+
+    def update_args(meta):
+        for key, val in meta.items():
+            setattr(args, key, val)
+
+    # pierwsze sito - sprawdza ścieżki
+    # len(args.path) == 1 -> image lub csv
+
 
     # check if it is_image()
     check, meta = is_imgs(args)

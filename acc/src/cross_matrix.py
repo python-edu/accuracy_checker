@@ -366,6 +366,9 @@ class CrossMatrixValidator:
         self.scheme = scheme
         self.data = self._enter_data(data)
         self.map_labels = map_labels.copy() if map_labels else None
+        self.map_labels_reversed = (dict(zip(map_labels.values(),
+                                            map_labels.keys())) if map_labels
+                                    else None)
         self.label_prefix = label_prefix
         self.type_cross = type_cross if type_cross else self._detect_type()
         self.cross_raw = None
@@ -486,15 +489,16 @@ class CrossMatrixValidator:
                         self.map_labels[key] 
                         for key in range(1, data.shape[1] + 1)
                     ]
+                    # breakpoint()
                     data.index = [
                             self.map_labels[key]
-                            for key in range(data.shape[0] + 1)
+                            for key in range(1, data.shape[0] + 1)
                             ]
                 except KeyError:
-                    print("Unable to fit class map to data. "
-                          "Row and column names remain unchanged."
+                    print("`Warning!`  \n\tUnable to fit class map to data. "
+                          "Row and column names remain unchanged.  \n"
                           )
-
+        # breakpoint()
         if self.type_cross == "cross":
             self.cross_as = data
             self.cross = data_sq
