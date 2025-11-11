@@ -14,12 +14,13 @@ imgs_replacement = {
         'cross_raw1': '-:$ accuracy cross_raw.csw',
         'cross_raw2': '-:$ accuracy cross_raw.csw class_map.json',
         'cross1': '-:$ accuracy cross.csv',
+        'cross2': '-:$ accuracy cross.csv class_map.json',
         'raster1': ('-:$ accuracy raster.tif  # this will generate an error: '
                     'no file `raster_ref`!!!'),
         'raster2': '-:$ accuracy raster.tif  # only if exists `raster_ref.tif`',
         'raster3': ('-:$ accuracy raster.tif class_map.json  # only if exists '
                     '`raster_ref.tif`'),
-
+        'raster4': '-:$ accuracy raster.tif reference_vector.gpkg',
         }
 
 # info_usage = """
@@ -583,7 +584,7 @@ class Readme2HelpCli:
 
             try:
                 res.append(txt)
-            except:
+            except Exception:
                 print(f"\n\nError:\n{gr}\n\n")
                 import sys
                 sys.exit(1)
@@ -626,28 +627,6 @@ class Readme2HelpCli:
             n=6
         line = f"{n*' '}{line.strip()}"
         return line
-
-    # def _format_numerowany(self, txt, **kwargs):  #, n, width):
-    #     """Args:
-    #     - txt:  '1. line\n2. line\n3.line..'
-    #     - n:  wielkość wcięcia listy: n * ' '
-    #     - w:  długość maksymalna linii
-    #     """
-    #     # ['1. line', '2. line', ...]
-    #     txt = [line.strip() for line in txt.splitlines()]
-
-    #     # zamienia kilkukrotne spacje na pojedyncze np. 'abc    xx` -> 'abc xx'
-    #     txt = [" ".join(line.split()) for line in txt]
-
-    #     # zawija długie linie
-    #     txt = [
-    #         textwrap.fill(line,
-    #                       width=self.width,
-    #                       subsequent_indent=3 * " ") for line in txt
-    #     ]
-
-    #     txt = "\n".join(txt)
-    #     return txt
 
     def _format_bold(self, line: str, **kwargs):
         return line

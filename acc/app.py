@@ -7,16 +7,11 @@ from types import SimpleNamespace
 
 import streamlit as st
 from streamlit_navigation_bar import st_navbar
-import numpy as np
-import pandas as pd
-
-import argparse
 
 
 # local imports
 from acc.src.args_data import help_info
 from acc.src.args_data import streamlit_args
-from acc.src.args import parsuj_argumenty  # żeby mieć nazwy argumentów
 from acc.src.args_data import args_func as afn
 from acc.main import main
 
@@ -194,7 +189,7 @@ def format_paths(paths_source=False, null='---', level=3) -> list[str]:
         paths_source = {f'pth{i}': st.session_state[f'pth{i}'] for i in (1,2,3)}
 
     elif isinstance(paths_source, str|Path):
-        paths_source = {f'pth1': str(paths_source)}
+        paths_source = {'pth1': str(paths_source)}
 
     elif isinstance(paths_source, list):
         p_range = list(range(1, len(paths_source)+1))
@@ -333,7 +328,8 @@ if page == "Calculations":
             }
 
     file_pattern = {'File_1': ['*.csv', '*.tif', '*.tiff', '*.TIF', '*.TIFF'],
-                    'File_2': ['*.csv', '*.tif', '*.tiff', '*.TIF', '*.TIFF'],
+                    'File_2': ['*.tif', '*.tiff', '*.TIF', '*.TIFF',
+                               '*.shp', '*.gpkg'],
                     'File_3': ['*.json']
                     }
     file_name = {'File_1': 'pth1',
@@ -573,13 +569,14 @@ if page == "Calculations":
     if run:
         if st.session_state.pth1:
             args = SimpleNamespace(**st.session_state.args)
-            args = afn.args_validation(args, **{"script_name": __file__})
+            # args = afn.args_validation(args, **{"script_name": __file__})
             writer = _WriteToStreamlit(st.empty())
 
             # with contextlib.redirect_stdout(writer):
             with (contextlib.redirect_stdout(writer),
                   contextlib.redirect_stderr(writer)):
                 try:
+                    args = afn.args_validation(args, **{"script_name": __file__})
                     main(args)
                 except SystemExit as e:
                     # jeśli w innym miejscu użyjesz sys.exit("komunikat"),

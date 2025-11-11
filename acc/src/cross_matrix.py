@@ -394,6 +394,7 @@ class CrossMatrixValidator:
         Depending on the detected type (raw, cross, or full), the method
         generates standardized forms of the matrix.
         """
+        # breakpoint()
         self.map_labels = self._create_map_labels()
 
         if self.type_cross == "raw":
@@ -481,24 +482,26 @@ class CrossMatrixValidator:
 
         if self.map_labels:
             try:
-                data.columns = [self.map_labels[key] for key in data.columns]
-                data.index = [self.map_labels[key] for key in data.index]
+                data_sq.columns = [self.map_labels[key] for key in data_sq.columns]
+                data_sq.index = [self.map_labels[key] for key in data_sq.index]
             except KeyError:
                 try:
-                    data.columns = [
+                    data_sq.columns = [
                         self.map_labels[key] 
-                        for key in range(1, data.shape[1] + 1)
+                        for key in range(1, data_sq.shape[1] + 1)
                     ]
                     # breakpoint()
-                    data.index = [
+                    data_sq.index = [
                             self.map_labels[key]
-                            for key in range(1, data.shape[0] + 1)
+                            for key in range(1, data_sq.shape[0] + 1)
                             ]
                 except KeyError:
-                    print("`Warning!`  \n\tUnable to fit class map to data. "
+                    print("`Warning!`  \n\tUnable to fit class map to data_sq. "
                           "Row and column names remain unchanged.  \n"
                           )
-        # breakpoint()
+        data_sq.index.name = data.index.name
+        data_sq.columns.name = data.columns.name
+    
         if self.type_cross == "cross":
             self.cross_as = data
             self.cross = data_sq
@@ -584,3 +587,32 @@ class CrossMatrixValidator:
         df.columns.name = "predicted"
         df.index.name = "true"
         return df.astype(int)
+
+
+class BinaryCrossMatrixValidator:
+    """
+    Simplified validation - perform class name mapping if class map exists.
+    """
+
+    def __init__(self, data, map_labels: dict = None):
+        self.map_labels = map_labels.copy() if map_labels else None
+        self.binary_cross = self._remap_labels(data)
+        self.binary_cross_rep = self.binary_cross.T
+    
+    def _remap_labels(self, data: pd.DataFrame) -> pd.DataFrame:
+        data = data.copy()
+
+        if self.map_labels:
+            try:
+                data.columns = [self.map_labels[key] for key in data.columns]
+            except KeyError:
+                try:
+                    data.columns = [
+                        self.map_labels[key] 
+                        for key in range(1, data.shape[1] + 1)
+                    ]
+                except KeyError:
+                    print("`Warning!`  \n\tUnable to fit class map to data. "
+                          "Row and column names remain unchanged.  \n"
+                          )
+        return data   

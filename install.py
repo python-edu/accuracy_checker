@@ -202,7 +202,7 @@ def add_path_to_rcfiles():
 
 
 def install_scripts():
-    print(f"\n>>> Start installation:")
+    print("\n>>> Start installation:")
     print(f"  - operating system: {SYSTEM}")
     print(f"  - environment: {ENV_DIR}\n")
     # force create env: czy istnieje czy nie 
@@ -227,7 +227,7 @@ def install_scripts():
             cwd=str(ROOT),
             check=True)
 
-    print(f"  - the `requirements.txt` was installed successfully")
+    print("  - the `requirements.txt` was installed successfully")
 
     # instalacja skryptów
     subprocess.run([str(PYTHON), '-m', 'pip', 'install', '.'],

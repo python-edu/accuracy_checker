@@ -703,10 +703,9 @@ def args_validation(args, **kwargs):
         reference_path = search_reference_file(args.path1)
         if not reference_path:
             tmp = Path(args.path1)
-            ref_file = f"{tmp.stem}_ref."  # {tmp.suffix}"
+            ref_file = f"{tmp.stem}_ref.tif or .gpkg or .shp"
             msg = f"\n\tFor file:\n\t  {args.path}\n"
-            msg += f"\t  no file `{ref_file}` with reference values found "
-            msg += "(*.shp, *.gpkg, *.tif).\n"
+            msg += f"\t  no file `{ref_file}` with reference values found!!!"
             print(msg, file=sys.stdout, flush=True)
             sys.exit(1)
         args.path2 = reference_path
