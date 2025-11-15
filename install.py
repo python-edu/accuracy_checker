@@ -3,9 +3,8 @@
 2. The script called with argument:
   - `-u` / `--uninstall` argument: it uninstalls the scripts 
   - `-p` / `--purge` argument: it uninstalls the scripts and completely removes
-     the cloned repository
+     the cloned repository.
 """
-
 
 import os
 import sys
@@ -19,13 +18,7 @@ import textwrap
 
 from pathlib import Path
 
-# --- globalne
-# if sys.platform == "darwin":
-#     # macOS
-# elif sys.platform.startswith("linux"):
-#     # Linux
-# elif sys.platform == "win32":
-#     # Windows
+
 SYSTEM = sys.platform
 ROOT = Path(__file__).resolve().parent
 ENV_DIR = ROOT / 'env'
@@ -230,10 +223,32 @@ def install_scripts():
     print("  - the `requirements.txt` was installed successfully")
 
     # instalacja skryptów
-    subprocess.run([str(PYTHON), '-m', 'pip', 'install', '.'],
-                   cwd=str(ROOT),
-                   check=True)
+    # subprocess.run([str(PYTHON), '-m', 'pip', 'install', '.'],
+    #                cwd=str(ROOT),
+    #                check=True)
 
+    # --- nowa wersja: instalacja najnowszego pliku wheel z katalogu wheels ---
+    wheels_dir = ROOT / "wheels"
+    wheels_list = sorted(
+            wheels_dir.glob("accuracy-*.whl"),
+            key=lambda p: p.name
+            )
+
+    if not wheels_list:
+        print("Err: no wheel found in wheels/ directory!")
+        sys.exit(1)
+
+    latest_wheel = wheels_list[-1]
+    print(f"  - installing wheel: {latest_wheel.name}")
+
+    subprocess.run(
+            [str(PYTHON), "-m", "pip", "install", str(latest_wheel)],
+            cwd=str(ROOT),
+            check=True
+            )
+    # --- koniec nowego kodu instalacji wheel ---
+
+    # check instalation
     res = subprocess.run([str(ACCURACY), '-h'], capture_output=True, text=True) 
     if res.returncode == 0:
         print(f"\n  - the {ACCURACY} was installed successfully")
