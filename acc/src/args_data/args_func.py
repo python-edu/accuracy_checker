@@ -1,5 +1,3 @@
-# -*- coding: utf-8-*-
-
 """Some functions for argument parsers"""
 
 import sys
@@ -8,9 +6,9 @@ import re
 import textwrap
 from pathlib import Path
 from collections import Counter
+from importlib.resources import files
 
 # local import
-
 from acc.src.args_data import help_info as info
 
 # global variable
@@ -681,7 +679,11 @@ def args_validation(args, **kwargs):
     """
     ROOT = set_root()
     args.ROOT = ROOT
-    args.README = str(Path(args.ROOT.parent) / "README.md")
+    args.README = Path(args.ROOT.parent) / "README.md"
+    if not args.README.exists():
+        args.README = Path(files("acc") / "README.md").resolve()
+
+    args.README = str(args.README)
 
     if args.save and args.zip:
         msg = """You can choose whether to save '*.csv' files or '*.zip'
