@@ -437,7 +437,7 @@ class AccIndex:
     """
 
     def __init__(self, data, precision=7):
-        self.tf = data.copy().astype(np.float128)
+        self.tf = data.copy().astype(np.float64)
         self.precision = precision
         self._over_methods_x1()
         self.over_methods_x2()

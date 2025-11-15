@@ -198,6 +198,12 @@ def install_scripts():
     print("\n>>> Start installation:")
     print(f"  - operating system: {SYSTEM}")
     print(f"  - environment: {ENV_DIR}\n")
+
+    # copy README.md to acc/ package
+    shutil.copy(ROOT / "README.md", ROOT / "acc" / "README.md")
+    print("  - the README.md file was copied to the `acc` package\n")
+
+
     # force create env: czy istnieje czy nie 
     if ENV_DIR.exists():
         shutil.rmtree(str(ENV_DIR))
