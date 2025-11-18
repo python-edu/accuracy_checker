@@ -14,7 +14,7 @@ python_build:
 copy_wheel:
 	latest="$$(ls -t dist/*.whl | head -n 1)"; \
 	cp "$$latest" wheels/; \
-	cp "$$latest" wheels/accuracy-latest.whl
+	cp "$$latest" wheels/accuracy-latest-0.0.0-py3-none-any.whl
 
 build: readme_cp docs_cp python_build copy_wheel
 	@echo "build wykonany"
