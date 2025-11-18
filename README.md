@@ -44,19 +44,39 @@ arguments. In the examples below, the argument is the name of a `csv` file with 
 
 You can install the script manually or use the installer.
 
+
+## Manual installation
+To install the script manually, download the latest version of the script (`accuracy-latest.whl`) file from the `wheels`
+directory or use the `RAW URL` address directly.
+
+   ```bash
+     -:$ # 1. Create a virtual environment, e.g.:
+     -:$ python -m venv env --prompt acc
+     
+     -:$ # 2. Activate the virtual environment
+     -:$ env/Scripts/activate       # Windows System:
+     -:$ source env/bin/activate    # Linux (Debian):
+     
+     -:$ # 3. Install the package in the environment:
+     -:$ #  - if the file was downloaded to disk:
+     -:$ python -m pip install accuracy-latest.whl
+
+     -:$ #  - using RAW URL
+     -:$ python -m pip install https://github.com/python-edu/accuracy_checker/blob/main/wheels/accuracy-latest.whl
+   ```
+
+
+## Installer
+
 First, download or clone the repository to your local drive:
   ```bash
     -:$ git clone https://github.com/python-edu/accuracy_checker.git
   ```
 
-Unpack the repository to your target location. Open a terminal and go to the root directory of the unpacked repo (acc):
+Unpack the repository to your target location. Open a terminal and go to the root directory of the unpacked repo:
   ```bash
-    -:$ cd acc/
+    -:$ cd accuracy_checker/
   ```
-
-
-## Installer
-
 Run the installer by entering the command:
 ```bash
   -:$ python install.py
@@ -65,8 +85,7 @@ Run the installer by entering the command:
 The installer will:
 
   - create a new virtual environment,
-  - install dependencies from `requirements.txt`,
-  - install the package into that environment,
+  - install the latest package version into that environment,
   - create `$HOME/.local/bin` (Linux/macOS) or `%USERPROFILE%\bin` (Windows) if it doesn’t already exist,
   - create launcher scripts in that `bin` directory so you can run the program from anywhere,
   - add that `bin` directory to the user’s `PATH`.
@@ -75,22 +94,6 @@ The installer will:
   - *The installer usually refreshes your PATH automatically. Sometimes you’ll need to close and reopen your terminal
   for the changes to take effect.*
 
-
-
-## Manual installation
-
-   ```bash
-     -:$ # 1. Create a virtual environment, e.g.:
-     -:$ python -m venv env --prompt acc
-     
-     -:$ # 2. Activate the virtual environment and install dependencies, e.g.:
-     -:$ env/Scripts/activate       # Windows System:
-     -:$ source env/bin/activate    # Linux (Debian):
-     -:$ python -m pip install -r requirements.txt
-     
-     -:$ # 3. Install the package in the environment:
-     -:$ python -m pip install -e .
-   ```
 
 ## Uninstallation
 To completely uninstall the script, including removing the unpacked repository, run the installer with the purge

@@ -246,17 +246,18 @@ def install_scripts():
 
     # instalacja skryptów
     # --- nowa wersja: instalacja najnowszego pliku wheel z katalogu wheels ---
-    wheels_dir = ROOT / "wheels"
-    wheels_list = sorted(
-            wheels_dir.glob("accuracy-*.whl"),
-            key=lambda p: p.name
-            )
+    latest_wheel = ROOT / "wheels" / "accuracy-latest.whl"
+    # wheels_dir = ROOT / "wheels" / "accuracy-latest.whl"
+    # wheels_list = sorted(
+    #         wheels_dir.glob("accuracy-*.whl"),
+    #         key=lambda p: p.name
+    #         )
 
-    if not wheels_list:
-        print("Err: no wheel found in wheels/ directory!")
-        sys.exit(1)
+    # if not wheels_list:
+    #     print("Err: no wheel found in wheels/ directory!")
+    #     sys.exit(1)
 
-    latest_wheel = wheels_list[-1]
+    # latest_wheel = wheels_list[-1]
     print(f"  - installing wheel: {latest_wheel.name}")
 
     subprocess.run(
