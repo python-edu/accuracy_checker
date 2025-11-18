@@ -46,8 +46,8 @@ You can install the script manually or use the installer.
 
 
 ## Manual installation
-To install the script manually, download the latest version of the script (`accuracy-latest.whl`) file from the `wheels`
-directory or use the `RAW URL` address directly.
+To install the script manually, download the latest version of the script (`accuracy-latest-0.0.0-py3-none-any.whl`)
+file from the `wheels` directory or use the `RAW URL` address directly.
 
    ```bash
      -:$ # 1. Create a virtual environment, e.g.:
@@ -62,7 +62,8 @@ directory or use the `RAW URL` address directly.
      -:$ python -m pip install accuracy-latest.whl
 
      -:$ #  - using RAW URL
-     -:$ python -m pip install https://github.com/python-edu/accuracy_checker/blob/main/wheels/accuracy-latest.whl
+     -:$ python -m pip install https://raw.githubusercontent.com/python-edu/accuracy_checker/main/wheels/accuracy-lat
+est-0.0.0-py3-none-any.whl
    ```
 
 
