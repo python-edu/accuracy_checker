@@ -5,7 +5,8 @@ readme_rm:
 	rm ./acc/README.md
 
 docs_cp:
-	cp -r ./docs/ ./acc/docs
+	mkdir -p ./acc/docs
+	cp -r ./docs/* ./acc/docs/
 
 python_build:
 	python -m build
