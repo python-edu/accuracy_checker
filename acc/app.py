@@ -1,4 +1,5 @@
 # io, contextlib: w celu przekierowania strumienia stdout do streamlit
+import os
 import io
 import contextlib
 
@@ -40,7 +41,7 @@ st.markdown("""
 # setup streamlite
 st.set_page_config(page_title="Accuracy", layout="wide")
 page = st_navbar(["Calculations", "Usage", "About data", "About metrics",
-                  "Formula"], adjust=False)
+                  "Formula","Stop"], adjust=False)
 
 
 # === GLOBALNE i funkcje / klasy używane w `Calculations` ===
@@ -292,7 +293,7 @@ def del_all_path():
 # === start program ===========================================================
 
 # to wyświetla pomoc
-if page != "Calculations":
+if page != "Calculations" and page != "Stop":
     # --- help section
     st.write(f"## {page}")
     text_name = help_map.get(page, 'no')
@@ -305,6 +306,8 @@ if page != "Calculations":
     # help_text = help_info.parse_help_text(help_text)
     st.markdown(getattr(help_txt, text_name), unsafe_allow_html=True)
 
+if page == "Stop":
+    os._exit(0)
 
 # to uruchamia obliczenia - skrypt `main.py`
 if page == "Calculations":

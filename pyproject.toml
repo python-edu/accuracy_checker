@@ -22,10 +22,11 @@ dependencies = [
 
 [project.scripts]
 accuracy = "acc.main:cli"
-
-
-[project.gui-scripts]
 accuracy_gui = "acc.app_entry:main"
+
+
+# [project.gui-scripts]
+# accuracy_gui = "acc.app_entry:main"
 
 
 [tool.setuptools]
