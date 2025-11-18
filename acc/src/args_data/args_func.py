@@ -644,11 +644,12 @@ def set_root() -> Path:
         Path: The directory where the `main.py` script is located.
     """
     # Pobierz absolutną ścieżkę do bieżącego pliku
-    current_file = Path(__file__).resolve()
+    # current_file = Path(__file__).resolve()
     # Przejdź dwa poziomy wyżej:
     # args_func.py in args_data -> src -> acc (główna ścieżka)
-    root_dir = current_file.parents[2]
-    return root_dir
+    # root_dir = current_file.parents[2]
+    # return root_dir
+    return files("acc")
 
 
 def args_validation(args, **kwargs):
@@ -677,13 +678,8 @@ def args_validation(args, **kwargs):
         SystemExit: If mutually exclusive arguments are set or required files
                     are missing.
     """
-    ROOT = set_root()
-    args.ROOT = ROOT
-    args.README = Path(args.ROOT.parent) / "README.md"
-    if not args.README.exists():
-        args.README = Path(files("acc") / "README.md").resolve()
-
-    args.README = str(args.README)
+    args.ROOT = set_root() 
+    args.readme_source = args.ROOT.joinpath("README.md")
 
     if args.save and args.zip:
         msg = """You can choose whether to save '*.csv' files or '*.zip'
@@ -814,9 +810,7 @@ def display_additional_help(args):
     Returns:
         None: Exits the script after displaying help information.
     """
-    with open(args.README) as f:
-        readme_txt = f.read()
-
+    readme_txt = args.readme_source.read_text()
     help_txt = info.Readme2HelpCli(readme_txt)
 
     if (hasattr(args, "help_usage")

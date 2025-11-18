@@ -4,6 +4,7 @@ import contextlib
 
 from pathlib import Path
 from types import SimpleNamespace
+from importlib.resources import files
 
 import streamlit as st
 from streamlit_navigation_bar import st_navbar
@@ -58,11 +59,11 @@ def setup_dirs():
         root = Path(__file__).parent.parent.resolve()
         st.session_state['root'] = root
 
-    if 'readme_path' not in st.session_state:
-        st.session_state['readme_path'] = st.session_state.root / 'README.md'
+    if 'readme_source' not in st.session_state:
+        st.session_state['readme_source'] = files('acc').joinpath('README.md')
 
-    if 'docs_path' not in st.session_state:
-        st.session_state['docs_path'] = next(st.session_state.root.rglob('docs'))
+    if 'docs_source' not in st.session_state:
+        st.session_state['docs_source'] = files('acc').joinpath('docs')
     
 
     cwd = (Path(st.session_state.root) / "example").resolve()
@@ -295,10 +296,11 @@ if page != "Calculations":
     # --- help section
     st.write(f"## {page}")
     text_name = help_map.get(page, 'no')
-    with open(st.session_state['readme_path']) as f:
-        readme_txt = f.read()
+    # with open(st.session_state['readme_path']) as f:
+    #     readme_txt = f.read()
+    readme_txt = st.session_state.readme_source.read_text()
     help_txt = help_info.Readme2Streamlit(readme_txt,
-                                          st.session_state.docs_path)
+                                          st.session_state.docs_source)
     # help_text = getattr(help_info, text_name, "No help")
     # help_text = help_info.parse_help_text(help_text)
     st.markdown(getattr(help_txt, text_name), unsafe_allow_html=True)

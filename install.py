@@ -22,12 +22,12 @@ from pathlib import Path
 SYSTEM = sys.platform
 ROOT = Path(__file__).resolve().parent
 ENV_DIR = ROOT / 'env'
-REQUIREMENTS = ROOT / 'requirements.txt'
-# TOML = ROOT / "pyproject.toml"
 ACCURACY = 'accuracy'
 ACCURACYGUI = 'accuracy_gui'
 PATH = os.getenv('PATH', '')
 LOG_DIR = (ROOT / 'logs').resolve()
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 
 if SYSTEM == 'win32':
     import winreg as wr
@@ -95,7 +95,8 @@ if SYSTEM == "darwin":    # macOS (zsh)
     RC_FILES = [Path.home()/".zprofile", Path.home()/".zshrc"]
 
 elif SYSTEM == "linux":   # Linux (bash)
-    RC_FILES = [Path.home()/".profile", Path.home()/".bashrc"]
+    # RC_FILES = [Path.home()/".profile", Path.home()/".bashrc"]
+    RC_FILES = [Path.home()/".bashrc"]
 
 else:
     RC_FILES = []  # tylko dla zgodności argumentów dla windows
@@ -125,13 +126,13 @@ def get_args():
 
     return parser.parse_args()
 
-# --- funkcje instalatora
 
+# --- funkcje instalatora
 
 def win_add_to_path() -> bool:
     """
     dla Windows:
-      - dopisuje %USERPROFILE%\\bin (BIN_DIR_LITERAL) do PATHx
+      - dopisuje %USERPROFILE%\\bin (BIN_DIR_LITERAL) do PATH
         użytkownika (HKCU\\Environment).
     Zakłada istnienie:
       - BIN_DIR_LITERAL (str)
@@ -171,7 +172,7 @@ def create_wrapper_files():
         WRAP_GUI.chmod(0o755)
 
 
-def add_path_to_rcfiles():
+def add_path_to_rcfiles_old():
     """Dodaje wpis do plików rc (np. .bashrc). Wpis dodaje ścieżkę do katalogu
     ~/.local/bin do PATH.
     """
@@ -194,15 +195,36 @@ def add_path_to_rcfiles():
     return True
 
 
+def add_path_to_rcfiles():
+    txt = r".local/bin"
+    updated = False
+
+    for rc in RC_FILES:
+        rc = Path(rc)
+        try:
+            content = rc.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            content = ""
+
+        if BLOCK not in content:
+            content += BLOCK
+            rc.write_text(content, encoding="utf-8")
+            print(f"  - {txt} was added to {rc.name}")
+            updated = True
+
+    if not updated:
+        print(f"  - {txt} already present in rc files")
+
+    print("  ** Reload your shell: `source ~/.bashrc` or reopen terminal **")
+
+
+# --- install ---
+
+
 def install_scripts():
     print("\n>>> Start installation:")
     print(f"  - operating system: {SYSTEM}")
     print(f"  - environment: {ENV_DIR}\n")
-
-    # copy README.md to acc/ package
-    shutil.copy(ROOT / "README.md", ROOT / "acc" / "README.md")
-    print("  - the README.md file was copied to the `acc` package\n")
-
 
     # force create env: czy istnieje czy nie 
     if ENV_DIR.exists():
@@ -213,26 +235,16 @@ def install_scripts():
                     prompt='acc',
                     upgrade_deps=True,
                     ).create(str(ENV_DIR))
+
     print("  - virtual env is created\n")
+
     if PYTHON.is_file():
         print(f"python interpreter: {PYTHON}")
     else:
         print(f"Err no python interpreter: {PYTHON}")
         sys.exit(1)
 
-    # instalacja requirements.txt
-    subprocess.run(
-            [str(PYTHON), '-m', 'pip', 'install', '-r', str(REQUIREMENTS)],
-            cwd=str(ROOT),
-            check=True)
-
-    print("  - the `requirements.txt` was installed successfully")
-
     # instalacja skryptów
-    # subprocess.run([str(PYTHON), '-m', 'pip', 'install', '.'],
-    #                cwd=str(ROOT),
-    #                check=True)
-
     # --- nowa wersja: instalacja najnowszego pliku wheel z katalogu wheels ---
     wheels_dir = ROOT / "wheels"
     wheels_list = sorted(

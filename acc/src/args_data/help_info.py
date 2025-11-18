@@ -4,6 +4,7 @@ import json
 import base64
 from collections import OrderedDict
 from pathlib import Path
+from importlib.resources import files
 
 
 imgs_replacement = {
@@ -702,11 +703,11 @@ class Readme2Streamlit(Readme2HelpCli):
     ...
 
     # def __init__(self, txt, indent=4, width=110):
-    def __init__(self, txt, docs_path):
+    def __init__(self, txt, docs_source):
         """Args:
             - txt:  str, text from README.md
-            - docs_path:  str, path to folder with images (screeny z konsoli
-                          pokazujące przykłady użycia)
+            - docs_source:  importlib.resources , virtual path to folder with
+              images (screeny z konsoli pokazujące przykłady użycia)
         """
         # ustawia atrybuty dla instancji: klucze z chapters
         for key in type(self).chapters:
@@ -715,7 +716,7 @@ class Readme2Streamlit(Readme2HelpCli):
 
         self.txt = [line.rstrip() for line in txt.splitlines()]
         self._split_chapters(self.txt)
-        self.docs_path = Path(docs_path)
+        self.docs_source = docs_source
 
         # dostosowuje metrics_help do streamlit
         self.metrics_help = self._format_metrics_help()
@@ -742,11 +743,11 @@ class Readme2Streamlit(Readme2HelpCli):
 
         for line in txt:
             if pattern.search(line):
-                img_pth = pattern.search(line).group(2)
-                name = Path(img_pth).name
-                img_pth = (self.docs_path / name).resolve()
-                if img_pth.exists():
-                    data = base64.b64encode(img_pth.read_bytes()).decode()
+                img_pth = Path(pattern.search(line).group(2))
+                name = str(img_pth.name)
+                img_source = self.docs_source.joinpath(name)
+                if img_source.is_file():
+                    data = base64.b64encode(img_source.read_bytes()).decode()
                     ext = img_pth.suffix.lstrip(".")
                     line = (f"<img alt='{name}' "
                             f"src='data:image/{ext};base64,{data}' "
