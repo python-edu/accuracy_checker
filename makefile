@@ -4,26 +4,24 @@ readme_cp:
 readme_rm:
 	rm ./acc/README.md
 
-docs_cp:
-	mkdir -p ./acc/docs
+docs_cp: readme_cp
+	mkdir -p ./acc/docs; \
 	cp -r ./docs/* ./acc/docs/
 
 python_build:
 	python -m build
 
 copy_wheel:
-	latest="$$(ls -t dist/*.whl | head -n 1)"; \
-	cp "$$latest" wheels/; \
+	latest_whl=$$(ls -t dist/*.whl | head -n 1); \
+	cp $$latest_whl -t wheels/
 
-latest_name := $(notdir $(shell ls -t dist/*.whl | head -n 1))
+.PHONY: README.md
+README.md: readme_source
+	latest_whl=$$(ls -t dist/*.whl | head -n 1); \
+	latest_name=$$(basename $$latest_whl); \
+	sed "s|{{latest.whl}}|$$latest_name|g" readme_source > README.md
 
-update_readme:
-	@echo "latest_name: $(latest_name)"
-	@cp readme_source README.md
-	@sed -i "s|{{latest.whl}}|$(latest_name)|" \
-	README.md
-
-build: update_readme readme_cp docs_cp python_build copy_wheel
+build: python_build copy_wheel README.md docs_cp
 	@echo "build wykonany"
 
 	
