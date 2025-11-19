@@ -59,10 +59,10 @@ file from the `wheels` directory or use the `RAW URL` address directly.
      
      -:$ # 3. Install the package in the environment:
      -:$ #  - if the file was downloaded to disk:
-     -:$ python -m pip install accuracy-3.0.0-py3-none-any.whl
+     -:$ python -m pip install {{latest.whl}}
 
      -:$ #  - using RAW URL
-     -:$ python -m pip install https://raw.githubusercontent.com/python-edu/accuracy_checker/main/wheels/accuracy-3.0.0-py3-none-any.whl
+     -:$ python -m pip install https://raw.githubusercontent.com/python-edu/accuracy_checker/main/wheels/{{latest.whl}}
    ```
 
 
