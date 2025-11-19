@@ -46,23 +46,27 @@ You can install the script manually or use the installer.
 
 
 ## Manual installation
-To install the script manually, download the latest version of the script (`accuracy-latest-0.0.0-py3-none-any.whl`)
-file from the `wheels` directory or use the `RAW URL` address directly.
+To install the script manually you can:
+
+  - download the latest version of the script from the `wheels` directory (`accuracy-latest-0.0.0-py3-none-any.whl`),
+  - or use the `RAW URL` address directly.
+
+Below is a list of script installation steps:
 
    ```bash
-     -:$ # 1. Create a virtual environment, e.g.:
-     -:$ python -m venv env --prompt acc
+      # 1. Create a virtual environment, e.g.:
+      python -m venv env --prompt acc
      
-     -:$ # 2. Activate the virtual environment
-     -:$ env/Scripts/activate       # Windows System:
-     -:$ source env/bin/activate    # Linux (Debian):
+      # 2. Activate the virtual environment
+      env/Scripts/activate       # Windows System:
+      source env/bin/activate    # Linux (Debian):
      
-     -:$ # 3. Install the package in the environment:
-     -:$ #  - if the file was downloaded to disk:
-     -:$ python -m pip install {{latest.whl}}
+      # 3. Install the package in the environment:
+      #  - if the file was downloaded to disk:
+      python -m pip install {{latest.whl}}
 
-     -:$ #  - using RAW URL
-     -:$ python -m pip install https://raw.githubusercontent.com/python-edu/accuracy_checker/main/wheels/{{latest.whl}}
+      #  - or using RAW URL
+      python -m pip install https://raw.githubusercontent.com/python-edu/accuracy_checker/main/wheels/{{latest.whl}}
    ```
 
 
@@ -70,17 +74,17 @@ file from the `wheels` directory or use the `RAW URL` address directly.
 
 First, download or clone the repository to your local drive:
   ```bash
-    -:$ git clone https://github.com/python-edu/accuracy_checker.git
+     git clone https://github.com/python-edu/accuracy_checker.git
   ```
 
 Unpack the repository to your target location. Open a terminal and go to the root directory of the unpacked repo:
   ```bash
-    -:$ cd accuracy_checker/
+     cd accuracy_checker/
   ```
 Run the installer by entering the command:
-```bash
-  -:$ python install.py
-```
+  ```bash
+     python install.py
+  ```
 
 The installer will:
 
