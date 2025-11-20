@@ -710,7 +710,7 @@ def args_validation(args, **kwargs):
 
     # Set output directory for saving results
     if args.save or args.report or args.zip:
-        args.out_dir = check_dir(args.path, args.out_dir)
+        args.out_dir = check_dir(args.path1, args.out_dir)
         if args.save or args.report:
             Path(args.out_dir).mkdir(parents=True, exist_ok=True)
     else:

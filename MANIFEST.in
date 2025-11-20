@@ -1,6 +1,8 @@
-global-exclude tests
-include LICENSE
-include README.md
-recursive-include acc/docs *
-recursive-include acc/src/templates *
+# WYKLUCZENIA
+prune tests
+global-exclude __pycache__/
+global-exclude __pycache__/*
+global-exclude *.py[cod]
 
+# PLIKI OBOWIĄZKOWE
+include LICENSE

@@ -11,7 +11,8 @@ authors = [{ name = "Piotr Kramarczyk", email = "piotrkramarczyk@proton.me" }]
 description = "Calculates popular metrics of accuracy for classifying raster images."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 keywords = ["accuracy", "classification", "raster", "metrics", "GIS"]
 dependencies = [
     "numpy", "pandas", "tabulate", "jinja2",
@@ -25,15 +26,11 @@ accuracy = "acc.main:cli"
 accuracy_gui = "acc.app_entry:main"
 
 
-# [project.gui-scripts]
-# accuracy_gui = "acc.app_entry:main"
-
-
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.packages]
-find = {} # Scan the project directory with the default parameters
+find = {exclude = ["tests*", "__pycache__", "__pycache__*"]}
 
 [tool.setuptools.package-data]
-"acc" = ["README.md", "docs/**", "src/templates/**"]
+"acc" = ["README.md", "docs/**", "src/templates/**", "example/data/**"]
