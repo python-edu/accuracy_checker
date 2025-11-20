@@ -337,18 +337,26 @@ def check_dir(path_csv: str, out_dir: str = None) -> str:
         str: The absolute, resolved path to the output directory.
     """
     path_csv = Path(path_csv).resolve()
-
+    # breakpoint()
     if out_dir is None:
         # Default directory name: <file_name>_results
         name = f"{path_csv.stem}_results"
         out_dir = path_csv.with_name(name)
-    else:
-        # Convert out_dir to a Path object
-        out_dir = Path(out_dir)
+        return str(out_dir.resolve())
+    
+    out_dir = Path(out_dir)
 
-        # If out_dir is a relative path, resolve it relative to the CSV file
-        if not out_dir.is_absolute():
-            out_dir = path_csv.with_name(out_dir.name)
+    # If out_dir is a relative path, resolve it relative to the CSV file
+    if not out_dir.is_absolute():
+        out_dir = path_csv.with_name(out_dir.name)
+
+    parts = out_dir.parts
+    pattern = str(Path(*parts[-3:]))
+
+    # jeśli ścieżka odpowiada katalogowi z danymi to utwórz podkatalog
+    if 'acc/example/data' == pattern:
+        name = f"{path_csv.stem}_results"
+        out_dir = path_csv.with_name(name)
 
     return str(out_dir.resolve())
 

@@ -16,7 +16,8 @@
 #  5. Clean: usuwa docs i example/data
 #  =====================================================
 
-build: docs_cp data_cp python_build copy_wheel README.md docs_rm data_rm
+# build: docs_cp data_cp python_build copy_wheel README.md docs_rm data_rm
+build: docs_cp data_cp python_build copy_wheel README.md data_rm
 	@echo "build wykonany"
 
 docs_cp:
