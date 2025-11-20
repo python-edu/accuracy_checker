@@ -44,7 +44,7 @@ page = st_navbar(["Calculations", "Usage", "About data", "About metrics",
                   "Formula","Stop"], adjust=False)
 
 
-# === GLOBALNE i funkcje / klasy używane w `Calculations` ===
+# === GLOBALNE i funkcje / klasy używane w `Calculations` ====================
 
 
 def get_name(dir_path: str):
@@ -63,10 +63,11 @@ def setup_dirs():
     if 'readme_source' not in st.session_state:
         st.session_state['readme_source'] = files('acc').joinpath('README.md')
 
+    # docs_source: katalog z '*.png' dla README.md
     if 'docs_source' not in st.session_state:
         st.session_state['docs_source'] = files('acc').joinpath('docs')
     
-
+    # 
     cwd = (Path(st.session_state.root) / "example").resolve()
     # globalna - referencja
     st.session_state.setdefault('CWD', cwd)
@@ -442,15 +443,11 @@ if page == "Calculations":
                          width="stretch",
                          key='up_butt'):
                 st.session_state["cwd"] = cwd.parent.resolve()
-                # czyści selectbox wyboru katalogu -> --Separator folder--
-                # st.session_state['for_path'] = None
                 st.rerun()
         
         with c_home.container():
             if st.button("~", disabled=False, width="stretch", key='home_butt'):
                 st.session_state["cwd"] = Path.home()
-                # czyści selectbox wyboru katalogu -> --Separator folder--
-                # st.session_state['for_path'] = None
                 st.rerun()
 
 
