@@ -16,6 +16,7 @@ from acc.src.args_data import help_info
 from acc.src.args_data import streamlit_args
 from acc.src.args_data import args_func as afn
 from acc.main import main
+from acc.src.data_config.example_config import config_data
 
 
 # setup for help
@@ -67,14 +68,18 @@ def setup_dirs():
     if 'docs_source' not in st.session_state:
         st.session_state['docs_source'] = files('acc').joinpath('docs')
     
-    # 
-    cwd = (Path(st.session_state.root) / "example").resolve()
+    if 'config_data' not in st.session_state:
+        config_data()
+        st.session_state['config_data'] = True
+
+    if "EXAMPLE_DATA" not in st.session_state:
+        st.session_state["EXAMPLE_DATA"] = Path(os.getenv("EXAMPLE_DATA"))
+
     # globalna - referencja
-    st.session_state.setdefault('CWD', cwd)
+    st.session_state.setdefault('CWD', st.session_state.EXAMPLE_DATA)
 
     if "cwd" not in st.session_state:
-        # cwd = (Path(st.session_state.root) / "example").resolve()
-        st.session_state["cwd"] = cwd
+        st.session_state["cwd"] = st.session_state.EXAMPLE_DATA
 
     # fdir - obsługuje wybór katalogów do wyboru plików
     if 'fdir' not in st.session_state:
@@ -149,6 +154,11 @@ def dir_selection(which: str = 'path', disabled=False):
     else:
         list_dirs = []
 
+    # Reset selectboxa jeśli lista folderów się zmieniła
+    if not disabled and list_dirs:
+        if st.session_state.get(select_key) not in list_dirs:
+            st.session_state.pop(select_key, None)
+
     # which == `out_dir`: label będzie wyświetlać aktualną wartość `ocwd`
     #  - czyli `base_dir`
     if which == 'out_dir':
@@ -179,6 +189,7 @@ def dir_selection(which: str = 'path', disabled=False):
             if which == 'out_dir':
                 st.session_state.args['out_dir'] = new_folder
             st.session_state[cwd_key] = new_folder
+            st.rerun()
 
 
 def format_paths(paths_source=False, null='---', level=3) -> list[str]:
@@ -394,11 +405,14 @@ if page == "Calculations":
         st.markdown(f"> `Current folder`: "
                     f"&emsp;**{cwd_str}**")
         
-        c1, c2, c3, c4 = st.columns([5,6,1,1])
+        # c1, c2, c3, c4 = st.columns([5,6,1,1])
+        c1, c2 = st.columns([1,1])
+        c3, c4, c5 = st.columns([1,1,1])
         c_dir = c1.container()   # select directory
         c_file = c2.container()  # select file
         c_up = c3.container()    # button up folder
         c_home = c4.container()  # button set home folder
+        c_data = c5.container()  # button set EXAMPLE_DATA folder
 
         # --- sekcja wyboru katalogu `cwd` i plików file1, file2, file3
         with c_dir.container():
@@ -433,12 +447,12 @@ if page == "Calculations":
                     "---")
 
 
-        # --- przyciski up i home
+        # --- przyciski up, home, e (EXAMPLE_DATA)
         with c_up.container():
             # on_off: kiedy cwd == home to wyłącza przycisk, żeby nie było
             # próby wychodzenia poza katalog domowy i eliminuje błąd
             on_off = cwd == Path.home() 
-            if st.button("\u2191",
+            if st.button("up",
                          disabled=on_off,
                          width="stretch",
                          key='up_butt'):
@@ -446,10 +460,16 @@ if page == "Calculations":
                 st.rerun()
         
         with c_home.container():
-            if st.button("~", disabled=False, width="stretch", key='home_butt'):
+            if st.button("home", disabled=False, width="stretch",
+                         key='home_butt'):
                 st.session_state["cwd"] = Path.home()
                 st.rerun()
 
+        with c_data.container():
+            if st.button("example data", disabled=False, width="stretch",
+                         key='data_butt'):
+                st.session_state["cwd"] = st.session_state.EXAMPLE_DATA
+                st.rerun()
 
         # === sekcja other options ============================================
         # zaznaczanie wyboru: save, zip, report, reversed

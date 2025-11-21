@@ -1,16 +1,21 @@
+import os
 import sys
 import numpy as np
 import pandas as pd
 
 # local import
-from acc.src.args import parsuj_argumenty
+from acc.src.args_data.args import parsuj_argumenty
 from acc.src import data_recognition
 from acc.src import functions as fn
 from acc.src.args_data import args_func as afn
 from acc.src.report import AccuracyReport
 from acc.src.verbose import Verbose
-from acc.src.metrics import CustomMetrics
+from acc.src.calculations.metrics import CustomMetrics
 from acc.src.formula2latex import LatexFormula
+from acc.src.data_config.example_config import config_data
+
+config_data()
+EXAMPLE_DATA = os.getenv("EXAMPLE_DATA") 
 
 
 def get_args():

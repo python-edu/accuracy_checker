@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 
 # local import
-from acc.src import metrics
+from acc.src.calculations import metrics
 
 # --- dla podpowiadacza:
 # breakpoint()

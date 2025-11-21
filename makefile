@@ -17,7 +17,10 @@
 #  =====================================================
 
 # build: docs_cp data_cp python_build copy_wheel README.md docs_rm data_rm
-build: docs_cp data_cp python_build copy_wheel README.md data_rm
+# UWAGA!!
+# - nie usuwam katalogów (docs_rm i data_rm) bo bez nich nie działa aplikacja
+#   lokalnie zainstalowana w trybie developpera `pip install -e .`!!!
+build: docs_cp data_cp python_build copy_wheel README.md
 	@echo "build wykonany"
 
 docs_cp:

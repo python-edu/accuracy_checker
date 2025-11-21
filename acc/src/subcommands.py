@@ -1,19 +1,12 @@
 import pandas as pd
-# import rasterio
-# import geopandas as gpd
-# import numpy as np
 from pathlib import Path
-# from rasterio.features import geometry_mask
 
 # local imports
-from acc.src import cross_matrix as crm
-from acc.src import binary_acc
-# from acc.src import functions as fn
+from acc.src.calculations import cross_matrix as crm
+from acc.src.calculations import binary_acc
 from acc.src import clip_rasterize as clp
 
-# --- dla podpowiadacza:
 # breakpoint()
-# ---
 
 
 class BinaryMatrix:

@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-
 import pandas as pd
 import numpy as np
 
 
 """
-Module version: {0}.
-
 This class creates a binary indicators table (TP, TN, FP, FN), called
 'bin_tab', based on a confusion matrix.
 
