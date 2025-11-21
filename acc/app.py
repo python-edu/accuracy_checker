@@ -397,7 +397,7 @@ if page == "Calculations":
 
         # sekcja wyboru plików: informacja o aktualnym katalogu `cwd`
         #   - nie dotyczy sekcji wyboru `out_dir`!!!
-        cwd = st.session_state.cwd
+        cwd = Path(st.session_state.cwd)
         if cwd == Path.home():
             cwd_str = '~/'
         else:
