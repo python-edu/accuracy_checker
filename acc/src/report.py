@@ -1,8 +1,9 @@
+import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Any
 from jinja2 import Environment, FileSystemLoader
-import datetime
+from importlib.resources.abc import Traversable
 
 
 @dataclass
@@ -24,13 +25,13 @@ class AccuracyReport:
     title: str = None
     description: str = None
     report_file: str = None
-    template_file: str = None
+    template_file: str | Path = None
     template_dir: Path = None
     script_name: str = None
     date: str = field(default_factory=lambda:
                       datetime.datetime.now().strftime("%Y-%m-%d")
                       )
-    css_file: Path = None
+    css_file: str = None
 
     env: Environment = field(init=False, repr=False, default=None)
     template: Any = field(init=False, repr=False, default=None)
@@ -47,7 +48,9 @@ class AccuracyReport:
             self.template_dir = Path(self.template_dir).resolve()
             # breakpoint()
             self.env = Environment(loader=FileSystemLoader(self.template_dir))
+            print(f"self.template_file: {self.template_file}\ndir: {self.template_dir}")
             self.template = self.env.get_template(self.template_file)
+            self.css = self.env.get_template(self.css_file)
 
     def update_attributes(self, **kwargs: Any) -> None:
         """
@@ -70,20 +73,6 @@ class AccuracyReport:
         # attributes affect them
         if self.template_dir and self.template_file:
             self.__post_init__()
-
-    def _read_css_file(self) -> str:
-        """
-        Read the CSS file and return its content.
-
-        Returns:
-            str: Content of the CSS file.
-        """
-        if not self.css_file or not Path(self.css_file).exists():
-            raise FileNotFoundError("CSS file path is invalid or does not "
-                                    "exist."
-                                    )
-        with open(self.css_file, "r", encoding="utf-8") as fp:
-            return fp.read()
 
     def __call__(self, data_dict: Dict[str, Any]) -> str:
         """
@@ -114,7 +103,7 @@ class AccuracyReport:
                       }
 
         # Read CSS content
-        css_content = self._read_css_file()
+        css_content = self.css.render()
 
         # Prepare data for the template
         description_data = {

@@ -1,9 +1,12 @@
 """Some functions for argument parsers"""
 
+import os
 import sys
 import json
 import re
 import textwrap
+import tempfile
+import shutil
 from pathlib import Path
 from collections import Counter
 from importlib.resources import files
@@ -328,20 +331,26 @@ def check_dir(path_csv: str, out_dir: str = None) -> str:
         - If `out_dir` is a name, it is treated as a directory name relative
           to the directory containing the `path_csv` file.
         - If `out_dir` is an absolute path, it is used directly.
+        - If `out_dir` == `EXAMPLE_DATA`, creates a sub directory like
+          `<file_name>_results` for the results - this is a temporary
+          directory that is deleted each time the script runs
 
     Args:
-        path_csv (str): Path to the input CSV file.
+        path_csv (str): Path to the input file `args.file1`.
         out_dir (str, optional): Name or path for the output directory.
 
     Returns:
         str: The absolute, resolved path to the output directory.
     """
     path_csv = Path(path_csv).resolve()
+
+    # safe name of out_dir name
+    name_extend = f"{path_csv.stem}_results"
     # breakpoint()
     if out_dir is None:
         # Default directory name: <file_name>_results
-        name = f"{path_csv.stem}_results"
-        out_dir = path_csv.with_name(name)
+        # name = f"{path_csv.stem}_results"
+        out_dir = path_csv.with_name(name_extend)
         return str(out_dir.resolve())
     
     out_dir = Path(out_dir)
@@ -350,14 +359,17 @@ def check_dir(path_csv: str, out_dir: str = None) -> str:
     if not out_dir.is_absolute():
         out_dir = path_csv.with_name(out_dir.name)
 
-    parts = out_dir.parts
-    pattern = str(Path(*parts[-3:]))
+    out_dir = out_dir.resolve()
+
+    # path to example data dir
+    EXAMPLE_DATA = os.getenv("EXAMPLE_DATA") 
 
     # jeśli ścieżka odpowiada katalogowi z danymi to utwórz podkatalog
-    if 'acc/example/data' == pattern:
-        name = f"{path_csv.stem}_results"
-        out_dir = path_csv.with_name(name)
-
+    if (str(out_dir) == str(EXAMPLE_DATA)
+        or str(out_dir) ==str(path_csv.parent)
+        ):
+        out_dir = out_dir / name_extend
+    
     return str(out_dir.resolve())
 
 
@@ -527,12 +539,15 @@ def paths_decoder(args):
     - Single path:
         - '*.csv' file sets `args.path1`.
         - '*.tif' image sets `args.path1` and searches for reference data.
+
     - Two paths:
         - '*.tif' and '*.json': sets `args.path1` and `args.path3`, searches
           for reference.
         - '*.tif' and vector file ('*.shp', '*.gpkg'): sets `args.path1` and
           `args.path2`.
-        - '*.csv' and '*.json': sets `args.path` and `args.path2` - zmieniłem na `args.path3` .
+        - '*.csv' and '*.json': sets `args.path` and `args.path2` - zmieniłem
+          na `args.path3` .
+
     - Three paths:
         - Image, vector, and JSON file are expected. Sets `args.path1`,
           `args.path2`, `args.path3`.
@@ -552,11 +567,22 @@ def paths_decoder(args):
         SystemExit: If invalid paths are provided or an unsupported
                     configuration is detected.
     """
-    if len(args.path) > 3:
-        msg = f"\n\t{len(args.path)} paths entered - maximum 3 allowed.\n"
-        sys.exit(msg)
-
     paths = args.path[:]
+
+    # to ma uruchamiać skrypt z danymi testowymi
+    if "example_data" in paths:
+        data_dir = Path(os.getenv("EXAMPLE_DATA"))
+        paths.remove('example_data')
+        paths = [str(data_dir / name) for name in paths]
+        setattr(args, "out_dir", data_dir)
+        # setattr(args, "path", paths)
+        # znacznik, że korzysta z danych przykładowych
+        setattr(args, "mode", "example_data")
+    # paths = args.path[:]
+
+    if len(paths) > 3:
+        msg = f"\n\t{len(paths)} paths entered - maximum 3 allowed.\n"
+        sys.exit(msg)
 
     # Check for help requests
     if "usage" in paths and "help" in paths:
@@ -570,6 +596,12 @@ def paths_decoder(args):
         return args
     if "formula" in paths and "help" in paths:
         setattr(args, "help_formula", True)
+        return args
+
+    # to ma wyświetlać listę dostępnych plików danych przykładowych
+    if "example" in paths and "help" in paths:
+        data_dir = os.getenv("EXAMPLE_DATA")
+        setattr(args, "example_help", data_dir)
         return args
 
     # Handle three paths: '.tif', '.tif/.shp/.gpkg', '.json'
@@ -602,13 +634,6 @@ def paths_decoder(args):
             args.path1 = check_file_path(paths[0])
             args.path2 = check_file_path(paths[-1])
             args.path3 = None
-        # teraz zawarte jest w poprzednim - chyba?? 
-        # elif (
-        #     Path(paths[0]).suffix in imgs_suffixes
-        #     and Path(paths[-1]).suffix in imgs_suffixes
-        # ):
-        #     args.path = check_file_path(paths[0])
-        #     args.path2 = check_file_path(paths[-1])
 
         elif (Path(paths[0]).suffix == ".csv" and
                 Path(paths[-1]).suffix == ".json"):
@@ -627,9 +652,6 @@ def paths_decoder(args):
             args.path1 = check_file_path(paths[0])
             args.path2 = None
             args.path3 = None
-        # elif suffix in imgs_suffixes:
-        #     args.path = check_file_path(paths[0])
-        #     args.path2 = None
         elif suffix in vector_suffixes:
             msg = (
                 f"\n\tOnly one path is entered: {paths[0]}.\n"
@@ -644,22 +666,6 @@ def paths_decoder(args):
     return args
 
 
-def set_root() -> Path:
-    """
-    Determines the root directory of the script.
-
-    Returns:
-        Path: The directory where the `main.py` script is located.
-    """
-    # Pobierz absolutną ścieżkę do bieżącego pliku
-    # current_file = Path(__file__).resolve()
-    # Przejdź dwa poziomy wyżej:
-    # args_func.py in args_data -> src -> acc (główna ścieżka)
-    # root_dir = current_file.parents[2]
-    # return root_dir
-    return files("acc")
-
-
 def args_validation(args, **kwargs):
     """
     Validates and processes input arguments for a script.
@@ -668,7 +674,8 @@ def args_validation(args, **kwargs):
         - Ensures mutually exclusive arguments `save` and `zip` are not
           both set.
         - Decodes paths and handles additional help flags
-          (`help_usage`, `help_data`, `help_metrics`).
+          (`help_usage`, `help_data`, `help_metrics`, `example_help` and
+          `example_data`).
         - Searches for reference files if required (e.g., for `.tif` images).
         - Creates necessary directories if saving or reporting is enabled.
         - Detects column separator for `.csv` files if not provided.
@@ -686,8 +693,7 @@ def args_validation(args, **kwargs):
         SystemExit: If mutually exclusive arguments are set or required files
                     are missing.
     """
-    args.ROOT = set_root() 
-    args.readme_source = args.ROOT.joinpath("README.md")
+    args.readme_source = files("acc") / "README.md"
 
     if args.save and args.zip:
         msg = """You can choose whether to save '*.csv' files or '*.zip'
@@ -701,7 +707,8 @@ def args_validation(args, **kwargs):
     if (hasattr(args, "help_usage")
             or hasattr(args, "help_data")
             or hasattr(args, "help_metrics")
-            or hasattr(args, "help_formula")):
+            or hasattr(args, "help_formula")
+            or hasattr(args, "example_help")):
         return args
 
     # Handle single `.tif` files by searching for reference files
@@ -727,13 +734,28 @@ def args_validation(args, **kwargs):
     # Parse report data if reporting is enabled
     if args.report:
         args.report_data = parse_report_data(args.report_data)
-        # template_dir = Path(args.report_data["template_dir"]).resolve()
-        template_dir = ROOT / 'src' / 'templates'
-        args.report_data["template_dir"] = str(template_dir)
+        # tworzy tymczasowy katalog do którego skopiowane zostaną dane
+        # potrzebne do raportu - jinja env
+        template_dir = Path(tempfile.mkdtemp(prefix="acc_tmp_"))
+        args.report_data["template_dir"] = template_dir
+
+        # report_file: plik wynikowy raportu
         report_file = Path(args.out_dir) / args.report_data["report_file"]
-        args.report_data["report_file"] = str(report_file)
-        css_file = template_dir / "styles.css"
-        args.report_data['css_file'] = str(css_file)
+        args.report_data["report_file"] = report_file
+
+        # template raportu - kopiowanie z pakietu do tymczasowego `template_dir`
+        template = files("acc") / "src" / "templates" / "report_template.html"
+        dst = args.report_data["template_dir"] / "report_template.html"
+        shutil.copy(template, dst)
+        args.report_data["template_file"] = "report_template.html"
+
+        # kopiowanie css_file
+        css_file = files("acc") / "src" / "templates" / "styles.css"
+        dst = args.report_data["template_dir"] / "styles.css"
+        shutil.copy(css_file, dst)
+        args.report_data['css_file'] = "styles.css"
+        # breakpoint()
+        
     else:
         del args.report_data
 
@@ -766,8 +788,6 @@ def args_validation(args, **kwargs):
         args.sep = detects_separator(args.path1)
 
     # Search for JSON class map file
-    # root_dir = Path(args.path).parent
-    # args.map_labels = search_json_file(root_dir)
     if args.path3 is not None:
         args.map_labels = load_json_file(args.path3)
     else:
@@ -826,18 +846,27 @@ def display_additional_help(args):
             or hasattr(args, "help_metrics")
             or hasattr(args, "help_formula")):
         if hasattr(args, "help_data"):
-            # txt = FormatHelp(info.info_data).txt
             txt = help_txt.data_help
         elif hasattr(args, "help_metrics"):
-            # txt = FormatHelp(info.info_metrics).txt
             txt = help_txt.metrics_help
         elif hasattr(args, "help_usage"):
-            # txt = FormatHelp(info.info_usage).txt
             txt = help_txt.usage_help
         elif hasattr(args, "help_formula"):
-            # txt = FormatHelp(info.info_formula).txt
             txt = help_txt.formula_help
             
 
         print(txt)
         sys.exit()
+
+
+def display_example_data_file_list(args):
+    if hasattr(args, 'example_help'):
+        EXAMPLE_DATA = os.getenv("EXAMPLE_DATA")
+        txt = f"\n   Example data available in the `{EXAMPLE_DATA}` directory:"
+        for file in sorted(Path(args.example_help).glob('**/*')):
+            txt += '\n\t' + str(file.name)
+    
+        txt += '\n'
+        print(txt)
+        sys.exit()
+

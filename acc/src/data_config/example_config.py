@@ -3,6 +3,8 @@ Moduł na zawiera skrypt który:
  - uruchamiany jest przy starcie main.py lub app.py
  - kopiuje dane przykładowe na dysk
  - ustawia zmienną środowiskową do danych EXAMPLE_DATA
+ - EXAMPLE_DATA: str - wskazuje (path) na katalog na dysku z danymi
+   przykładowymi
 """
 
 import os
@@ -13,8 +15,9 @@ from platformdirs import user_data_dir
 
 
 def get_example_data_dir(appname: str = "accuracy") -> Path:
-    """Zwraca katalog na dane użytkownika zgodnie z OS, do którego zostaną
-    przekopiowane dane przykładowe zawarte w pakiecie. Zwykle to:
+    """Zwraca katalog na dane użytkownika zgodnie z OS (EXAMPLE_DATA), do
+    którego zostaną przekopiowane dane przykładowe zawarte w pakiecie. Zwykle
+    to:
     - linux / mac:  /home/.cache/share/accuracy/example_data/
     - windows :     %LOCALAPPDATA%\accuracy\example_data\
     """
@@ -26,15 +29,15 @@ def copy_example_data():
     """Kopiuje pliki tylko jeśli nie istnieją.
        EXAMPLE_DATA musi być ustawione wcześniej.
     """
-    dst_root = os.getenv("EXAMPLE_DATA")
-    if dst_root is None:
+    data_dir = os.getenv("EXAMPLE_DATA")
+    if data_dir is None:
         raise RuntimeError("EXAMPLE_DATA is not set before copy_example_data()")
 
-    dst_pth = Path(dst_root)
+    data_dir = Path(data_dir)
     src = files("acc") / "example" / "data"
 
     for file in src.iterdir():
-        dst = dst_pth / file.name
+        dst = data_dir / file.name
         if not dst.exists():
             shutil.copy(file, dst)
 
@@ -44,15 +47,19 @@ def config_data():
         - jeśli EXAMPLE_DATA istnieje - korzysta z niej
         - jeśli nie istnieje ustawia domyślną wartość.
     """
-    dir_pth = os.getenv("EXAMPLE_DATA")
+    data_dir = os.getenv("EXAMPLE_DATA")
 
     # jeśli nie istnieje zmienna "EXAMPLE_DATA"
-    if dir_pth is None:
-        dir_pth = Path(get_example_data_dir()).resolve()
-        dir_pth.mkdir(parents=True, exist_ok=True)
-        os.environ["EXAMPLE_DATA"] = str(dir_pth)
-    else:
-        dir_pth = Path(dir_pth).resolve()
+    if data_dir is None:
+        data_dir = Path(get_example_data_dir()).resolve()
+        os.environ["EXAMPLE_DATA"] = str(data_dir)
+    
+    data_dir = Path(data_dir).resolve()
 
+    # if exist -> make clean
+    if data_dir.exists():
+        shutil.rmtree(data_dir)
+
+    data_dir.mkdir(parents=True, exist_ok=True)
     copy_example_data()
     return

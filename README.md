@@ -117,6 +117,7 @@ You can display help by calling the script with the following options:
     -:$ accuracy data help      # information about input data
     -:$ accuracy metrics help   # information about accuracy metrics
     -:$ accuracy formula help   # help for custom calculation formulas
+    -:$ accuracy example help   # displays a list of available input data files
   ```
 
 ## Input file schemes
@@ -126,6 +127,14 @@ You can input one (1) to three (3) files into the script, using one of the follo
  - `Scheme 3`: two files, a **csv** file (`File_1` in the GUI) and a **json** file (`File_3` in the GUI).
  - `scheme 4`: two files, the image after classification (`File_1` in the GUI) and the reference data (image or vector - `File_2` in the GUI).
  - `scheme 5`: three files, the image after classification (`File_1` in the GUI), the reference data (`File_2` in the GUI), and the **json** file (class map, `File_3` in the GUI).
+
+## Using example data
+Sample data is available and copied to the user's directory each time the script is run. Running a script with sample
+data requires entering the prefix **`example_data`** immediately after the script name, followed by the names of the
+available files. 
+
+### Raw cross marix with class_map:
+![example_data](./docs/example_data.png)
 
 ## Using *raw data*
 The input is a single `*.csv` file:

@@ -15,19 +15,21 @@ from acc.src.formula2latex import LatexFormula
 from acc.src.data_config.example_config import config_data
 
 config_data()
+# path to example data dir
 EXAMPLE_DATA = os.getenv("EXAMPLE_DATA") 
 
 
 def get_args():
-    parser = parsuj_argumenty()
+    args = parsuj_argumenty()
 
     # 1. Obsługa argumentów linii poleceń
     # =====================================================================
-    args = parser.parse_args()
     args = afn.args_validation(args, **{"script_name": __file__})
 
     # 1a. It will display additional help and terminate the script
     afn.display_additional_help(args)
+    afn.display_example_data_file_list(args)
+
     return args
 
 

@@ -18,6 +18,7 @@ Additional help:
 - `accuracy data help`: displays help about input data
 - `accuracy metrics help`: displays information about accuracy metrics
 - `accuracy formula help`: help with your own custom calculation formulas 
+- `accuracy example help`: displays a list of available input data files
     """
 ).txt
 
@@ -80,8 +81,9 @@ def parsuj_argumenty():
         """).txt
     default = ["title=Image Classification Accuracy Assessment",
                'description=Research project.',
-               'report_file=report.html', 'template_file=report_template.html',
-               'template_dir=templates']
+               'report_file=report.html']
+    #, 'template_file=report_template.html',
+    #            'template_dir=templates']
     parser.add_argument("--report_data", help=txt, nargs='+', type=list,
                         default=default)
 
@@ -119,4 +121,4 @@ def parsuj_argumenty():
     txt = "Displays additional information while the script is running."
     parser.add_argument("-v", "--verbose", action="store_true", help=txt)
 
-    return parser
+    return parser.parse_args()
