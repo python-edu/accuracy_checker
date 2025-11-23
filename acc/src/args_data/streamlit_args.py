@@ -27,7 +27,7 @@ class ListDirectories:
     EXCLUDE_DIRS = ["AppData", ".local", ".bin", "__pycache__",
                     ".ipynb_checkpoints", ".env", "env", "venv", ".jupyter",
                     ".git", ".pytest_cache", ".deps",
-                    "build", "share", "var", "lib", "etc", "perl",".egg_info",
+                    "build", "var", "lib", "etc", "perl",".egg_info",
                     "vim", "neovim", "git", "snap"]
 
     # pattern dosłowny bez znaków regex np ^$+ itd
