@@ -17,13 +17,13 @@ keywords = ["accuracy", "classification", "raster", "metrics", "GIS"]
 dependencies = [
     "numpy", "pandas", "tabulate", "jinja2", "platformdirs",
     "shapely", "fiona", "geopandas",
-    "pyproj", "rtree", "rasterio", "pytexit",
+    "pyproj", "rtree", "rasterio", "pytexit", "nicegui"
 ]
 
 
 [project.scripts]
 accuracy = "acc.main:cli"
-accuracy_gui = "acc.app_entry:main"
+accuracy_gui = "acc.gui:main_gui"
 
 
 [tool.setuptools]

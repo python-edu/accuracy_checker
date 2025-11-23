@@ -14,3 +14,4 @@ rasterio
 geopandas
 pytexit
 platformdirs
+nicegui
