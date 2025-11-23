@@ -13,6 +13,4 @@ rtree
 rasterio
 geopandas
 pytexit
-streamlit
-streamlit-navigation-bar
 platformdirs
