@@ -1,8 +1,5 @@
 wheel
-setuptools
 build
-flake8
-black
 numpy
 pandas
 jinja2
@@ -13,5 +10,6 @@ rtree
 rasterio
 geopandas
 pytexit
+streamlit
+streamlit_navigation_bar
 platformdirs
-nicegui

@@ -20,7 +20,8 @@ EXAMPLE_DATA = os.getenv("EXAMPLE_DATA")
 
 
 def get_args():
-    args = parsuj_argumenty()
+    parser = parsuj_argumenty()
+    args = parser.parse_args()
 
     # 1. Obsługa argumentów linii poleceń
     # =====================================================================

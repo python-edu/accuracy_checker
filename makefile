@@ -43,6 +43,7 @@ python_build:
 	python -m build
 
 copy_wheel:
+	rm wheels/*; \
 	latest_whl=$$(ls -t dist/*.whl | head -n 1); \
 	cp $$latest_whl wheels/
 

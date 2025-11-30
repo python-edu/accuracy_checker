@@ -20,16 +20,17 @@ After installation, run the script from any terminal by typing the command and p
 arguments. In the examples below, the argument is the name of a `csv` file with classification results
 (see **Data Help**).
 
-1. If installed via the `installer`, you can run it from anywhere without manually activating the virtual environment.
+1. If the script was installed using the `pipx` manager, you can run it from anywhere without having to manually
+   activate the virtual environment:
    ```bash
     -:$ accuracy raw_classification.csv
    ```
 
-2. If you installed `manually` into a virtual environment, activate the environment first, then run the command.
+2. If you installed the script using the `pip` command, in a virtual environment, first activate the environment and
+   then run the command:
    ```bash
     (acc) -:$ accuracy raw_classification.csv
    ```
-
 
 3. There is also a simple GUI based on **Streamlit** that opens in your web browser.
    ```bash
@@ -42,24 +43,22 @@ arguments. In the examples below, the argument is the name of a `csv` file with 
 
 # Installation
 
-You can install the script manually or use the installer.
+The script can be installed using the `whl` file::
+  - download the latest version of the script from the `wheels` directory (`{{latest.whl}}`),
+  - or use the `RAW URL` address directly - see below.
 
 
-## Manual installation
-To install the script manually you can:
-
-  - download the latest version of the script from the `wheels` directory (`accuracy-latest-0.0.0-py3-none-any.whl`),
-  - or use the `RAW URL` address directly.
-
-Below is a list of script installation steps:
+## Installation with pip
+It's best to install the script in a virtual environment. The following example assumes creating an environment for
+installation.
 
    ```bash
       # 1. Create a virtual environment, e.g.:
-      python -m venv env --prompt acc
+      python -m venv acc
      
       # 2. Activate the virtual environment
-      env/Scripts/activate       # Windows System:
-      source env/bin/activate    # Linux (Debian):
+      acc/Scripts/activate       # Windows System:
+      source acc/bin/activate    # Linux (Debian):
      
       # 3. Install the package in the environment:
       #  - if the file was downloaded to disk:
@@ -69,43 +68,31 @@ Below is a list of script installation steps:
       python -m pip install https://raw.githubusercontent.com/python-edu/accuracy_checker/main/wheels/{{latest.whl}}
    ```
 
+## Installation with pipx
+Installing with the `pipx` manager automatically creates the appropriate virtual environment and updates environment
+variables so that the script can be run from any location, without first activating the environment - see pipx
+[documentation](https://pipx.pypa.io/latest/).
 
-## Installer
+   ```bash
+      # Install the package:
+      #  - if the file was downloaded to disk:
+      pipx install {{latest.whl}}
 
-First, download or clone the repository to your local drive:
-  ```bash
-     git clone https://github.com/python-edu/accuracy_checker.git
-  ```
-
-Unpack the repository to your target location. Open a terminal and go to the root directory of the unpacked repo:
-  ```bash
-     cd accuracy_checker/
-  ```
-Run the installer by entering the command:
-  ```bash
-     python install.py
-  ```
-
-The installer will:
-
-  - create a new virtual environment,
-  - install the latest package version into that environment,
-  - create `$HOME/.local/bin` (Linux/macOS) or `%USERPROFILE%\bin` (Windows) if it doesn’t already exist,
-  - create launcher scripts in that `bin` directory so you can run the program from anywhere,
-  - add that `bin` directory to the user’s `PATH`.
-
-**Note**:
-  - *The installer usually refreshes your PATH automatically. Sometimes you’ll need to close and reopen your terminal
-  for the changes to take effect.*
-
+      #  - or using RAW URL
+      pipx install https://raw.githubusercontent.com/python-edu/accuracy_checker/main/wheels/{{latest.whl}}
+   ```
 
 ## Uninstallation
-To completely uninstall the script, including removing the unpacked repository, run the installer with the purge
-option (`-p/--purge`):
-  ```bash
-    -:$ python install.py -p
-  ```
+To uninstall the script, depending on your installation method, do the following:
+  - for installation with `pip` - delete the environment directory with the installed script in any way:
+    ```bash
+      rm -rf acc/  # example for Linux
+    ```
 
+  - for installation with `pipx`:
+    ```bash
+      pipx uninstall accuracy
+    ```
 ---
 
 

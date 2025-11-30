@@ -121,4 +121,5 @@ def parsuj_argumenty():
     txt = "Displays additional information while the script is running."
     parser.add_argument("-v", "--verbose", action="store_true", help=txt)
 
-    return parser.parse_args()
+    # return parser.parse_args()
+    return parser
