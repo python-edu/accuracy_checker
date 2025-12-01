@@ -24,7 +24,7 @@ dependencies = [
 [project.scripts]
 accuracy = "acc.main:cli"
 accuracy_gui = "acc.app_entry:main"
-accuracy_tk = "acc.gui:run"
+# accuracy_tk = "acc.gui:run"
 
 [tool.hatch.build]
 include = [
