@@ -4,7 +4,6 @@ import json
 import base64
 from collections import OrderedDict
 from pathlib import Path
-from importlib.resources import files
 
 
 imgs_replacement = {

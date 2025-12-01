@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Any
 from jinja2 import Environment, FileSystemLoader
-from importlib.resources.abc import Traversable
 
 
 @dataclass

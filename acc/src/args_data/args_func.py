@@ -729,7 +729,8 @@ def args_validation(args, **kwargs):
         if args.save or args.report:
             Path(args.out_dir).mkdir(parents=True, exist_ok=True)
     else:
-        delattr(args, "out_dir")
+        if getattr(args, "out_dir", False): 
+            delattr(args, "out_dir")
 
     # Parse report data if reporting is enabled
     if args.report:
@@ -757,7 +758,8 @@ def args_validation(args, **kwargs):
         # breakpoint()
         
     else:
-        del args.report_data
+        if getattr(args, "report_data", False):
+            del args.report_data
 
     # Add script-specific options if provided
     if kwargs.get("script_name"):

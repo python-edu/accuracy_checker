@@ -2,9 +2,9 @@
 import os
 import io
 import contextlib
+import argparse
 
 from pathlib import Path
-from types import SimpleNamespace
 from importlib.resources import files
 
 import streamlit as st
@@ -17,6 +17,7 @@ from acc.src.args_data import streamlit_args
 from acc.src.args_data import args_func as afn
 from acc.main import main
 from acc.src.data_config.example_config import config_data
+from acc.src.args_data.args import parsuj_argumenty
 
 
 # setup for help
@@ -93,6 +94,11 @@ def setup_dirs():
     if 'odir' not in st.session_state:
         cwd = st.session_state.cwd
         st.session_state['odir'] = streamlit_args.ListDirectories(root=cwd)
+    
+    if 'args' not in st.session_state:
+        parser = parsuj_argumenty()
+        # parsuje ze zmyślonym obowiązkowym argumentem path
+        st.session_state['args'] = parser.parse_args('fake_path')
 
 
 def dir_selection(which: str = 'path', disabled=False):
@@ -172,8 +178,8 @@ def dir_selection(which: str = 'path', disabled=False):
             # ustaw ocwd i args['out_dir'], jeśli jeszcze puste
             if st.session_state.get('ocwd') is None:
                 st.session_state['ocwd'] = base_dir
-            if st.session_state.args.get('out_dir') is None:
-                st.session_state.args['out_dir'] = base_dir
+            if getattr(st.session_state.args, 'out_dir', None) is None:
+                st.session_state.args.out_dir = base_dir
 
     new_folder = st.selectbox(label,
                            options=list_dirs,
@@ -187,7 +193,7 @@ def dir_selection(which: str = 'path', disabled=False):
         new_folder = Path(new_folder).resolve()
         if new_folder != base_dir:
             if which == 'out_dir':
-                st.session_state.args['out_dir'] = new_folder
+                st.session_state.args.out_dir = new_folder
             st.session_state[cwd_key] = new_folder
             st.rerun()
 
@@ -207,11 +213,9 @@ def format_paths(paths_source=False, null='---', level=3) -> list[str]:
 
     elif isinstance(paths_source, list):
         p_range = list(range(1, len(paths_source)+1))
-        # breakpoint()
         paths_source = {f'pth{i}': str(paths_source[i-1]) for i in p_range}
 
     for pth in ('pth1', 'pth2', 'pth3'):
-        # pth = st.session_state[pth]
         pth = paths_source.get(pth)
         if pth is not None:
             pth = Path(pth)
@@ -232,17 +236,12 @@ def format_paths(paths_source=False, null='---', level=3) -> list[str]:
 
 
 def update_args():
-    st.session_state.args['path'] = []
-    # res = ' '
-    # res = []
+    st.session_state.args.path = []
     for name in ('pth1', 'pth2', 'pth3'):
         pth = st.session_state.get(name, False)
         if pth:
             pth = (str(pth)).strip()
-            st.session_state.args['path'].append(pth)
-            # res += f'{str(pth)} '
-    # res = res.strip()
-    # st.session_state.args['path'] = res
+            st.session_state.args.path.append(pth)
 
 
 class _WriteToStreamlit(io.TextIOBase):
@@ -291,7 +290,7 @@ def del_path(file_key: str):
     # wyczyść session_state
     st.session_state[pth] = None
     if file_key == 'File_1':
-        st.session_state.args['out_dir'] = None  #st.session_state.cwd
+        st.session_state.args.out_dir = None  #st.session_state.cwd
 
 
 def del_all_path():
@@ -309,13 +308,9 @@ if page != "Calculations" and page != "Stop":
     # --- help section
     st.write(f"## {page}")
     text_name = help_map.get(page, 'no')
-    # with open(st.session_state['readme_path']) as f:
-    #     readme_txt = f.read()
     readme_txt = st.session_state.readme_source.read_text()
     help_txt = help_info.Readme2Streamlit(readme_txt,
                                           st.session_state.docs_source)
-    # help_text = getattr(help_info, text_name, "No help")
-    # help_text = help_info.parse_help_text(help_text)
     st.markdown(getattr(help_txt, text_name), unsafe_allow_html=True)
 
 if page == "Stop":
@@ -329,21 +324,6 @@ if page == "Calculations":
                    'template_file=report_template.html',
                    'template_dir=templates']
 
-    # nazwy argumentów i wartości domyślne
-    args = {'path': [],
-            "save": False,
-            "out_dir": None,
-            "report": False,
-            "report_data": report_data[:],
-            "precision": 4,
-            "zip": False,
-            "zip_name": None,
-            "formula": None,
-            "sep": None,
-            "reversed": False,
-            "verbose": False
-            }
-
     file_pattern = {'File_1': ['*.csv', '*.tif', '*.tiff', '*.TIF', '*.TIFF'],
                     'File_2': ['*.tif', '*.tiff', '*.TIF', '*.TIFF',
                                '*.shp', '*.gpkg'],
@@ -355,7 +335,6 @@ if page == "Calculations":
                     }
     # --- setup
     setup_dirs()
-    st.session_state.setdefault('args', args)
 
     for pth in ('pth1', 'pth2', 'pth3'):
         st.session_state.setdefault(pth, None)
@@ -405,7 +384,6 @@ if page == "Calculations":
         st.markdown(f"> `Current folder`: "
                     f"&emsp;**{cwd_str}**")
         
-        # c1, c2, c3, c4 = st.columns([5,6,1,1])
         c1, c2 = st.columns([1,1])
         c3, c4, c5 = st.columns([1,1,1])
         c_dir = c1.container()   # select directory
@@ -484,17 +462,17 @@ if page == "Calculations":
         # --- można wybrać tylko jedną z 3 opcji: no, save, zip
         #     wybór będzie blokował inne możliwości
         if save_zip == 'no':
-            st.session_state.args['save'] = False
-            st.session_state.args['zip'] = False
+            st.session_state.args.save = False
+            st.session_state.args.zip = False
         elif save_zip == 'save':
-            st.session_state.args['save'] = True 
-            st.session_state.args['zip'] = False
+            st.session_state.args.save = True 
+            st.session_state.args.zip = False
         elif save_zip == 'zip':
-            st.session_state.args['save'] = False
-            st.session_state.args['zip'] = True
+            st.session_state.args.save = False
+            st.session_state.args.zip = True
 
-        st.session_state.args['report'] = a12.checkbox('Report')
-        st.session_state.args['reversed'] = a13.checkbox('Reversed')
+        st.session_state.args.report = a12.checkbox('Report')
+        st.session_state.args.reversed = a13.checkbox('Reversed')
 
         # === przyciski wyboru katalogu ===
         a21, up1, c_home1 = st.columns([6, 1, 1])
@@ -525,9 +503,9 @@ if page == "Calculations":
 
         # wybór katalogu `out_dir`
         with a21.container():
-            disabled = not (st.session_state.args['save'] or
-                            st.session_state.args['zip'] or
-                            st.session_state.args['report'])
+            disabled = not (st.session_state.args.save or
+                            st.session_state.args.zip or
+                            st.session_state.args.report)
             dir_selection('out_dir', disabled=disabled)
 
 
@@ -541,9 +519,9 @@ if page == "Calculations":
                 sep = st.selectbox('csv separator',
                                   options=[',', ';', ' ', '\t', ':'],
                                   )
-                st.session_state.args['sep'] = sep
+                st.session_state.args.sep = sep
             else:
-                st.session_state.args['sep'] = ',' 
+                st.session_state.args.sep = ',' 
 
         with prec_check.container():
             mark_precision = st.checkbox('Precision', key='mark_precision')
@@ -553,24 +531,24 @@ if page == "Calculations":
                                           max_value=10,
                                           step=1,
                                           value=4)
-                st.session_state.args['precision'] = int(prec_no)
+                st.session_state.args.precision = int(prec_no)
             else:
-                st.session_state.args['precision'] = 4 
+                st.session_state.args.precision = 4 
 
         with formula_check.container():
             mark_formula = st.checkbox('Formula')
             if mark_formula:
                 formula_text = st.text_input('Formula')
-                st.session_state.args['formula'] = formula_text
+                st.session_state.args.formula = formula_text
             else:
-                st.session_state.args['formula'] = None
+                st.session_state.args.formula = None
 
         with verbose_col.container():
             verbose_mark = st.checkbox('Verbose')
             if verbose_mark:
-                st.session_state.args['verbose'] = True
+                st.session_state.args.verbose = True
             else:
-                st.session_state.args['verbose'] = False
+                st.session_state.args.verbose = False
 
         # === synchronizacja args po każdej zmianie ===
         update_args()
@@ -590,11 +568,9 @@ if page == "Calculations":
     run = st.button('Run script', key='run_script')
     if run:
         if st.session_state.pth1:
-            args = SimpleNamespace(**st.session_state.args)
-            # args = afn.args_validation(args, **{"script_name": __file__})
+            args = argparse.Namespace(**vars(st.session_state.args))
             writer = _WriteToStreamlit(st.empty())
 
-            # with contextlib.redirect_stdout(writer):
             with (contextlib.redirect_stdout(writer),
                   contextlib.redirect_stderr(writer)):
                 try:
@@ -608,8 +584,6 @@ if page == "Calculations":
                         writer.write(e.code + "\n")
                     st.stop() 
 
-            # with contextlib.redirect_stdout(writer):
-            #     main(args)
         else:
             st.info('Select arguments, please!')
 
